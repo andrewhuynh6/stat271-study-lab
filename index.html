@@ -59,22 +59,14 @@ button{font-family:inherit}
 .shell{max-width:1080px; margin:0 auto}
 
 
-.prof{display:flex; gap:14px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:16px}
-.prof-face{flex:0 0 auto; width:68px; height:72px}
-.prof-face svg{width:100%; height:100%; display:block}
-.prof-body{flex:1; min-width:0; display:grid; gap:6px}
-.prof-name{font-family:var(--font-d); font-weight:600; font-size:13px; color:var(--ink-2)}
 .bubble{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:13.5px; line-height:1.45; color:var(--ink)}
 .bubble::before{content:""; position:absolute; left:-7px; top:16px; width:12px; height:12px; background:var(--surface-2); border-left:1px solid var(--line); border-bottom:1px solid var(--line); transform:rotate(45deg)}
-.prof-meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-m); font-size:11.5px; color:var(--ink-3)}
 .meter{flex:1; min-width:70px; height:6px; background:rgba(var(--ink-rgb),.12); border-radius:999px; overflow:hidden}
 .meter i{display:block; height:100%; width:0; background:var(--good)}
 .linkbtn{background:none; border:none; padding:0; font:inherit; color:var(--ink-3); text-decoration:underline; text-underline-offset:3px; cursor:pointer}
 .linkbtn:hover{color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){
   .meter i{transition:width .5s}
-  .prof-face.pop svg{animation:profpop .45s ease}
-  @keyframes profpop{0%{transform:scale(.9) rotate(-4deg)} 55%{transform:scale(1.08) rotate(3deg)} 100%{transform:scale(1) rotate(0)}}
 }
 .rail{display:flex; gap:2px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:20px; scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
@@ -166,17 +158,12 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 
 /* ===== Doodle components ===== */
-.hero{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:6px 28px; align-items:center; margin-bottom:6px}
+.hero{display:grid; grid-template-columns:minmax(0,1fr); gap:6px 28px; align-items:center; margin-bottom:6px}
 .hero h1{font-size:clamp(36px,6.2vw,60px); font-weight:800; line-height:1.02; letter-spacing:-1.2px; text-wrap:balance}
 .hero p{font-size:clamp(15px,2vw,19px); color:var(--ink-2); margin:12px 0 22px; max-width:32ch}
-.hero-art{width:100%; max-width:310px; justify-self:center; color:var(--ink)}
-.hero-art svg{display:block; width:100%; height:auto}
 .fine{font-family:var(--font-m); font-size:11.5px; color:var(--ink-3); margin:0 0 18px; max-width:80ch}
 a.btn{display:inline-block; text-decoration:none}
-@media (max-width:700px){.hero{grid-template-columns:minmax(0,1fr)} .hero-art{max-width:250px}}
-.card,.prof{border:2px solid var(--edge); box-shadow:3px 3px 0 var(--edge); border-radius:14px}
-.prof-face{display:none}
-.hero-art,.corner-face,.prof-face{color:var(--char)}
+.card{border:2px solid var(--edge); box-shadow:3px 3px 0 var(--edge); border-radius:14px}
 .chip{border:2px solid var(--edge); background:var(--surface); color:var(--ink); font-weight:600; border-radius:999px}
 .chip:hover{background:var(--surface-2); color:var(--ink)}
 .chip.active{background:#FFC53D; color:#111; border-color:var(--edge)}
@@ -210,24 +197,9 @@ a.btn{display:inline-block; text-decoration:none}
 @media (prefers-reduced-motion:no-preference){
   .btn{transition:transform .1s, box-shadow .1s}
   .btn:hover:not(:disabled){transform:translate(-1px,-1px)}
-  .hero-art.pop svg{animation:heropop .5s ease}
-  @keyframes heropop{0%{transform:translateY(8px) scale(.97)} 60%{transform:translateY(-6px)} 100%{transform:none}}
 }
 
-/* ===== Professor in the corner: always visible ===== */
-.corner{position:fixed; right:max(10px,env(safe-area-inset-right,0px)); bottom:max(10px,env(safe-area-inset-bottom,0px)); z-index:60; display:flex; flex-direction:column; align-items:flex-end; gap:10px; pointer-events:none}
-.corner>*{pointer-events:auto}
-.corner-face{position:relative; width:112px; height:122px; padding:6px 6px 16px; background:var(--surface); border:2px solid var(--edge); border-radius:18px; box-shadow:3px 3px 0 var(--edge); cursor:pointer}
-.corner-face svg{width:100%; height:100%; display:block}
-.corner-meter{position:absolute; left:12px; right:12px; bottom:6px; height:7px; border-radius:99px; background:rgba(var(--ink-rgb),.15); overflow:hidden}
-.corner-meter i{display:block; height:100%; background:#FFC53D}
-.corner-say{position:relative; max-width:min(320px,80vw); background:var(--surface); color:var(--ink); border:2px solid var(--edge); border-radius:14px; padding:10px 14px; font-size:14.5px; font-weight:600; line-height:1.4; box-shadow:3px 3px 0 var(--edge)}
-.corner-say::after{content:""; position:absolute; right:40px; bottom:-8px; width:12px; height:12px; background:var(--surface); border-right:2px solid var(--edge); border-bottom:2px solid var(--edge); transform:rotate(45deg)}
-@media (max-width:700px){.corner-face{width:88px; height:96px; padding:5px 5px 13px} .corner-say{font-size:13.5px}}
 body{padding-block:24px 150px}
-.prof-face{width:92px; height:98px}
-.hero-art{max-width:440px}
-.prof-face{display:none}
 
 /* ===== Wide layout and bigger reading text ===== */
 .shell{max-width:1560px}
@@ -244,16 +216,14 @@ body{font-size:17px; padding-left:max(20px,env(safe-area-inset-left,0px)); paddi
 .formula{font-size:17px; line-height:1.7; padding:10px 14px}
 .ans{font-size:17.5px; padding:10px 14px}
 .btn{font-size:14px; padding:11px 20px}
-.bubble{font-size:16px} .prof-name{font-size:15px} .prof-meta{font-size:13px}
+
 .fine{font-size:12.5px}
 .hero h1{font-size:clamp(40px,6vw,76px)} .hero p{font-size:clamp(17px,2vw,22px)}
-.hero-art{max-width:540px}
-.corner-face{width:132px; height:144px} .corner-say{font-size:16px; max-width:min(380px,80vw)}
 .easy-note{background:var(--surface-2); border:2px dashed var(--edge); border-radius:12px; padding:12px 16px; font-size:17px; margin-bottom:14px}
 .btn[aria-pressed="true"]{background:#FFC53D; color:#111!important}
 .hero .btn + .btn{margin-left:8px}
 @media (min-width:901px){.workspace{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:22px}}
-@media (max-width:700px){body{font-size:16px} .q-text{font-size:19px} .step-x p,.formula{font-size:16px} .corner-face{width:96px; height:106px}}
+@media (max-width:700px){body{font-size:16px} .q-text{font-size:19px} .step-x p,.formula{font-size:16px}}
 </style>
 
 <div class="shell">
@@ -263,20 +233,10 @@ body{font-size:17px; padding-left:max(20px,env(safe-area-inset-left,0px)); paddi
       <p>Randomized practice with a picture for every step.</p>
       <a class="btn" href="#stage">Start practicing</a> <button type="button" class="btn ghost" id="easyBtn" aria-pressed="false">Simpler words: off</button>
     </div>
-    <div class="hero-art" id="heroArt" role="img" aria-label="Professor Wei"></div>
   </header>
   <p class="fine">Built from the Week 1 to 10 slides, problem sets and midterms. Answers are computed in code, and your exam tables round to 3 or 4 decimals, so expect small differences.</p>
-  <section class="prof" id="prof" aria-live="polite">
-    <div class="prof-face" id="profFace" role="img" aria-label="Professor Wei"></div>
-    <div class="prof-body">
-      <div class="prof-name">Professor Wei</div>
-      <div class="bubble" id="profSay"></div>
-      <div class="prof-meta"><span id="profMood"></span><div class="meter"><i id="profBar"></i></div><button type="button" class="linkbtn" id="profReset">Reset</button></div>
-    </div>
-  </section>
   <nav class="rail" id="rail" role="tablist" aria-label="Topics"></nav>
   <main id="stage"></main>
-  <div class="corner" id="corner"><div class="corner-say" id="cornerSay" hidden></div><button type="button" class="corner-face" id="cornerFace" aria-label="Professor Wei"></button></div>
 </div>
 
 <script>
@@ -1959,119 +1919,6 @@ var VARIANTS={
 };
 MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+t.id];if(v)t.variants=v.map(function(x,i){return {id:'v'+i,label:x[0],re:x[1]};});});});
 
-/* ================= the professor ================= */
-var PROF_MOODS=['Skeptical','Curious','Pleased','Proud','Overjoyed'],PROF_AT=[0,5,25,50,80],PROF_LOSS=15;
-var PROF_GREET=[
-  ['Ah, one of my students. Finish a question and I’ll start smiling.','Your current final strategy is hope. Hope is not on the syllabus.'],
-  ['Good to see you again. That was a solid start.','Keep going. You’re making progress.'],
-  ['Good to see you. You’re doing well.','Nice work so far. Keep it up.'],
-  ['You’re doing great. Keep this up.','I’m really happy with your progress.'],
-  ['You’ve done so much. I’m really proud of you.','You are carrying the class average.']
-];
-var PROF_DONE=[
-  ['One down. Not bad at all.','You read the steps. Good start.','A finished question. Keep going.'],
-  ['Another one! You’re getting the hang of this.','Nice. That’s real progress.','Good. I like where this is going.'],
-  ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant one.','That was clean. Do another.'],
-  ['Excellent. That was well done.','You’re making me very happy.','You are moving into the right tail of this class’s grade distribution.'],
-  ['I can’t stop smiling.','Fantastic work. The exam won’t know what hit it.','You are carrying the class average.','You should be proud of yourself. I am.']
-];
-var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! Excellent work. I’m proud of you.','Level up! Top marks. You’ve really earned this.'];
-var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I missed you. Let’s get going.','Okay, that’s one. No more skipping days.'];
-function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
-function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
-function profDays(a,b){var pa=a.split('-'),pb=b.split('-');return Math.round((Date.UTC(+pb[0],+pb[1]-1,+pb[2])-Date.UTC(+pa[0],+pa[1]-1,+pa[2]))/864e5);}
-function profLoad(){try{var o=JSON.parse(localStorage.getItem('stat271-prof3')||'null');if(o&&typeof o.pts==='number')return o;}catch(e){}return null;}
-function profSave(){try{localStorage.setItem('stat271-prof3',JSON.stringify(PROF));}catch(e){}}
-var PROF=profLoad(),profSad=false,profArm=0,profGreeting='';
-(function(){
-  var today=profToday();
-  if(!PROF){PROF={pts:0,total:0,last:today};profGreeting=pick(PROF_GREET[0]);}
-  else{
-    var away=profDays(PROF.last,today),missed=Math.max(0,away-1),loss=Math.min(PROF.pts,missed*PROF_LOSS);
-    if(missed>0){
-      PROF.pts-=loss;profSad=true;
-      profGreeting=pick([
-        'You were gone '+away+' days. I got sad.'+(loss?' Mood dropped by '+loss+'.':''),
-        'Your current final strategy is hope. Hope is not on the syllabus.'+(loss?' (Mood −'+loss+'.)':''),
-        'Oh, you’re back.'+(loss?' I lost '+loss+' mood points, but I’m glad to see you.':' Let’s get back to it.')
-      ]);
-    } else profGreeting=pick(PROF_GREET[profLevel(PROF.pts)]);
-    PROF.last=today;
-  }
-  profSave();
-})();
-function profInner(m){
-  var sad=m<0,ey=sad?46:43,k='currentColor',hair='#2a2830',skin='#f6cfa6',ink='#23283f';
-  var brows=sad?['M25 33 L42 26','M54 26 L71 33']:[['M25 30 Q33 23 42 28','M54 32 L68 32'],['M25 29 Q33 25 42 29','M54 29 Q62 25 70 29'],['M25 31 Q33 27 42 31','M54 31 Q62 27 70 31'],['M25 27 Q33 22 42 27','M54 27 Q62 22 70 27'],['M25 28 Q33 22 42 28','M54 28 Q62 22 70 28']][m];
-  var mouth=sad?'M37 74 Q48 64 59 74':['M38 71 L58 69','M37 68 Q48 74 59 68','M35 66 Q48 78 61 66','M34 64 Q48 84 62 64 Z','M33 63 Q48 88 63 63 Z'][m];
-  var open=m>=3;
-  var eyes=m===4
-    ?'<path d="M27 46 Q33 38 39 46" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M57 46 Q63 38 69 46" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/>'
-    :'<circle cx="'+(m===0?35:33)+'" cy="'+ey+'" r="3.4" fill="'+ink+'"/><circle cx="'+(m===0?65:63)+'" cy="'+ey+'" r="3.4" fill="'+ink+'"/>';
-  var gy=m===4?43:ey,fy=gy+2,s='';
-  s+='<path d="M9 52 Q3 14 49 5 Q93 13 87 52 Q89 72 77 76 L75 56 L21 56 L19 76 Q7 72 9 52 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="3.2" stroke-linejoin="round"/>';
-  s+='<path d="M16 99 Q18 85 37 82 L48 92 L59 82 Q78 85 80 99 Z" fill="#e8664a" stroke="'+k+'" stroke-width="3.4" stroke-linejoin="round"/>';
-  s+='<path d="M40 83 L48 96 L56 83 L52 80 L48 86 L44 80 Z" fill="#fffaf0" stroke="'+k+'" stroke-width="2.4" stroke-linejoin="round"/>';
-  s+='<path d="M23 96 l3 -5 M73 96 l-3 -5" stroke="'+k+'" stroke-width="2" stroke-linecap="round"/>';
-  s+='<path d="M16 46 Q15 12 48 11 Q81 12 80 46 Q79 82 48 82 Q17 82 16 46 Z" fill="'+skin+'" stroke="'+k+'" stroke-width="3.4" stroke-linejoin="round"/>';
-  s+='<path d="M15 36 Q11 8 48 5 Q85 8 81 36 Q74 18 62 21 Q52 12 40 21 Q26 16 15 36 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="2.8" stroke-linejoin="round"/>';
-  s+='<circle cx="17" cy="58" r="2.4" fill="#ffc53d" stroke="'+k+'" stroke-width="1"/><circle cx="79" cy="58" r="2.4" fill="#ffc53d" stroke="'+k+'" stroke-width="1"/>';
-  if(m>=3)s+='<ellipse cx="25" cy="59" rx="6" ry="4" fill="#ff8f7d" opacity=".6"/><ellipse cx="71" cy="59" rx="6" ry="4" fill="#ff8f7d" opacity=".6"/><path d="M21 62 l3 -2 M72 62 l3 -2" stroke="#d9604c" stroke-width="1.6" stroke-linecap="round"/>';
-  s+=eyes;
-  s+='<rect x="21" y="'+(fy-9)+'" width="24" height="19" rx="7" fill="#bcdcff" fill-opacity=".3"/><rect x="51" y="'+(fy-9)+'" width="24" height="19" rx="7" fill="#bcdcff" fill-opacity=".3"/>'
-   +'<path d="M21 '+(fy-9)+' L21 '+(fy+2)+' Q21 '+(fy+10)+' 29 '+(fy+10)+' L37 '+(fy+10)+' Q45 '+(fy+10)+' 45 '+(fy+2)+' L45 '+(fy-9)+'" stroke="'+k+'" stroke-width="1.8" fill="none"/>'
-   +'<path d="M51 '+(fy-9)+' L51 '+(fy+2)+' Q51 '+(fy+10)+' 59 '+(fy+10)+' L67 '+(fy+10)+' Q75 '+(fy+10)+' 75 '+(fy+2)+' L75 '+(fy-9)+'" stroke="'+k+'" stroke-width="1.8" fill="none"/>'
-   +'<path d="M19.5 '+(fy-9)+' L46.5 '+(fy-9)+'" stroke="'+k+'" stroke-width="3.4" stroke-linecap="round"/><path d="M49.5 '+(fy-9)+' L76.5 '+(fy-9)+'" stroke="'+k+'" stroke-width="3.4" stroke-linecap="round"/>'
-   +'<path d="M46 '+(fy-9)+' L50 '+(fy-9)+'" stroke="'+k+'" stroke-width="2.4"/>'
-   +'<path d="M26 '+(fy-3)+' L31 '+(fy-5)+'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".9"/><path d="M56 '+(fy-3)+' L61 '+(fy-5)+'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>';
-  s+='<path d="'+brows[0]+'" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="'+brows[1]+'" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/>';
-  s+='<path d="M48 49 Q44 57 49 58" stroke="'+ink+'" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
-  s+='<path d="'+mouth+'" stroke="'+ink+'" stroke-width="2.8" fill="'+(open?'#8a2f3b':'none')+'" stroke-linecap="round" stroke-linejoin="round"/>';
-  if(sad)s+='<ellipse cx="27" cy="62" rx="2" ry="3.4" fill="#7cc7f5" stroke="'+ink+'" stroke-width="1"/>';
-  if(m===4)s+='<ellipse cx="28" cy="60" rx="2" ry="3.2" fill="#7cc7f5"/><ellipse cx="68" cy="60" rx="2" ry="3.2" fill="#7cc7f5"/><path d="M8 14 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#ffc53d" stroke="'+k+'" stroke-width="1.4" stroke-linejoin="round"/><path d="M86 10 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z" fill="#ffc53d" stroke="'+k+'" stroke-width="1.4" stroke-linejoin="round"/>';
-  return s;
-}
-function profSVG(m){return '<svg viewBox="0 0 96 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+profInner(m)+'</svg>';}
-function heroSVG(m,pts){
-  var s='<svg viewBox="0 0 158 108" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
-  s+='<svg x="6" y="3" width="100" height="104" viewBox="0 0 96 100" overflow="visible">'+profInner(m)+'</svg>';
-  s+='<path d="M110 103 L154 103" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>';
-  s+='<path d="M115 68 L115 96 Q115 101 120 101 L136 101 Q141 101 141 96 L141 68 Z" fill="#fffaf0" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M141 74 Q153 74 153 84 Q153 93 141 92" fill="none" stroke="currentColor" stroke-width="3"/>';
-  s+='<path d="M122 60 Q118 54 123 48 M132 60 Q128 54 133 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>';
-  s+='<text x="128" y="92" font-size="20" text-anchor="middle" font-family="Georgia,serif" font-weight="700" fill="#e8664a">Σ</text>';
-  return s+'</svg>';
-}
-function showCorner(line,ms){
-  var cs=document.getElementById('cornerSay');if(!cs)return;
-  cs.textContent=line;cs.hidden=false;
-  clearTimeout(showCorner.t);showCorner.t=setTimeout(function(){cs.hidden=true;},ms||7000);
-}
-function renderProf(line,pop){
-  var l=profLevel(PROF.pts),face=document.getElementById('profFace'),next=PROF_AT[l+1],name=profSad?'Disappointed':PROF_MOODS[l];
-  face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Professor Wei, mood: '+name);
-  var ha=document.getElementById('heroArt');if(ha){ha.innerHTML=heroSVG(profSad?-1:l,PROF.pts);ha.setAttribute('aria-label','Professor Wei, mood: '+name+', mood '+PROF.pts+' out of 100');}
-  document.getElementById('profSay').textContent=line;
-  var cf=document.getElementById('cornerFace');if(cf){cf.innerHTML=profSVG(profSad?-1:l)+'<span class="corner-meter"><i style="width:'+PROF.pts+'%"></i></span>';cf.setAttribute('aria-label','Professor Wei, mood '+name+', '+PROF.pts+' out of 100');}
-  if(pop)showCorner(line);
-  document.getElementById('profMood').textContent=name+' · mood '+PROF.pts+'/100 · '+PROF.total+' solved';
-  document.getElementById('profBar').style.width=PROF.pts+'%';
-  if(pop){face.classList.remove('pop');void face.offsetWidth;face.classList.add('pop');if(ha){ha.classList.remove('pop');void ha.offsetWidth;ha.classList.add('pop');}}
-}
-function profDone(){
-  var before=profLevel(PROF.pts),wasSad=profSad;
-  PROF.pts=Math.min(100,PROF.pts+5);PROF.total++;PROF.last=profToday();profSad=false;profSave();
-  var after=profLevel(PROF.pts);
-  renderProf(wasSad?pick(PROF_FORGIVE):after>before?PROF_LEVELUP[after]:pick(PROF_DONE[after]),true);
-}
-document.getElementById('profReset').onclick=function(){
-  var b=this;
-  if(!profArm){profArm=1;b.textContent='Sure? Click again';setTimeout(function(){profArm=0;b.textContent='Reset';},3000);return;}
-  profArm=0;PROF={pts:0,total:0,last:profToday()};profSad=false;profSave();b.textContent='Reset';renderProf('Fresh start. Let’s see what you can do.',true);
-};
-renderProf(profGreeting,false);
-showCorner(profGreeting,6500);
-(function(){var cf=document.getElementById('cornerFace');if(cf)cf.onclick=function(){showCorner(document.getElementById('profSay').textContent+'  (mood '+PROF.pts+'/100)',6500);};})();
-
 /* ================= Simpler words mode ================= */
 var EASY_MAP={'random variables':'numbers we measure (random variables)','random variable':'a number we measure (random variable)','probabilities':'chances (probabilities)','probability':'chance (probability)','pmf':'chance table (pmf)','pdfs':'chance curves (pdfs)','pdf':'chance curve (pdf)','cdf':'running-total curve (CDF)','expected value':'average (expected value)','expectation':'average (expectation)','variance':'spread (variance)','standard deviation':'typical spread (standard deviation)','marginals':'one-variable views (marginals)','marginal':'one-variable view (marginal)','conditional':'given-that (conditional)','independent':'not affecting each other (independent)','independence':'not affecting each other (independence)','integrate':'add up (integrate)','integral':'sum of tiny pieces (integral)','integrals':'sums of tiny pieces (integrals)','normalize':'scale so the total is 1 (normalize)','covariance':'how two things move together (covariance)','correlation':'how tightly two things move together (correlation)','p-value':'surprise score (p-value)','confidence interval':'range we trust (confidence interval)','hypothesis':'claim (hypothesis)','sample mean':'average of what we measured (sample mean)','sample':'group we measured (sample)','population':'everything we care about (population)','estimate':'best guess (estimate)','estimator':'guessing rule (estimator)','distribution':'pattern of values (distribution)','bound':'limit (bound)'};
 var EASY_RE=new RegExp('\\b('+Object.keys(EASY_MAP).sort(function(a,b){return b.length-a.length;}).join('|')+')\\b','gi');
@@ -2168,8 +2015,7 @@ function prevStep(){if(!state.q||state.s<=0)return;state.s--;applyStep(false);}
 function nextStep(){if(!state.q||state.s>=state.q.steps.length)return;state.s++;applyStep(true);}
 function applyStep(scroll){
   var n=state.q.steps.length;
-  if(state.s>=n&&n>0&&!state.q.counted){state.q.counted=true;profDone();}
-  Array.prototype.forEach.call(el.steps.children,function(c,i){c.classList.toggle('on',i<state.s);});
+    Array.prototype.forEach.call(el.steps.children,function(c,i){c.classList.toggle('on',i<state.s);});
   el.count.textContent='step '+state.s+' of '+n;
   el.back.disabled=state.s<=0;el.next.disabled=state.s>=n;el.next.textContent=state.s>=n?'All steps shown':state.s===0?'Start':'Next step';
   draw();
