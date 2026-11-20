@@ -302,6 +302,17 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
 .rail .tab.active .tab-wk{background:#fff; color:#111}
 .rail .tab[data-id="quiz"]{margin-top:0; border-style:solid}
 @media (max-width:980px){.rail .tab .tab-wk{width:30px; height:30px; min-width:30px; font-size:14px}.rail-h{margin-top:6px}}
+
+/* ===== sidebar pinned to the far left edge of the window ===== */
+.rail-brand{display:none}
+@media (min-width:981px){
+  body{padding-left:316px}
+  .shell{margin:0; max-width:1500px}
+  .layout{display:block}
+  .rail{position:fixed; left:0; top:0; bottom:0; width:280px; max-height:none; margin:0; padding:18px 14px 24px 16px; background:var(--bg); border-right:2px solid var(--edge); overflow-y:auto; z-index:20}
+  .rail-brand{display:block; font-family:var(--font-d); font-weight:800; font-size:22px; line-height:1.05; letter-spacing:-.4px; margin:0 2px 6px}
+  .rail-brand small{display:block; font-family:var(--font-m); font-weight:500; font-size:11px; letter-spacing:.2px; color:var(--ink-3); margin-top:6px}
+}
 </style>
 
 <div class="shell">
@@ -3400,7 +3411,7 @@ function renderQuiz(){
 function mod(){return MODULES.filter(function(m){return m.id===state.id;})[0];}
 function renderRail(){
   var heads={w1:'Foundations · Wk 1–2',w3:'Distributions · Wk 3–8',w9:'Inference · Wk 9–10',w11:'Models · Wk 11–13',quiz:'Check yourself'};
-  rail.innerHTML=MODULES.map(function(m){
+  rail.innerHTML='<div class="rail-brand">STAT 271<br>Study Lab<small>pick a week</small></div>'+MODULES.map(function(m){
     var h=heads[m.id]?'<div class="rail-h">'+heads[m.id]+'</div>':'',sub=m.quiz?QUIZ.length+' questions':m.types.length+' problem types';
     return h+'<button class="tab'+(m.id===state.id?' active':'')+'" data-id="'+m.id+'" role="tab" aria-selected="'+(m.id===state.id)+'"><span class="tab-wk">'+H(m.num||m.week)+'</span><span class="tab-txt"><span class="tab-name">'+H(m.label)+'</span><span class="tab-sub">'+sub+'</span></span></button>';
   }).join('');
