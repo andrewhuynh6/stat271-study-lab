@@ -65,7 +65,8 @@ button{font-family:inherit}
 .prof{display:flex; gap:14px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:16px}
 .prof-face{flex:0 0 auto; width:68px; height:72px}
 .prof-face svg{width:100%; height:100%; display:block}
-.prof-body{flex:1; min-width:0; display:grid; gap:8px}
+.prof-body{flex:1; min-width:0; display:grid; gap:6px}
+.prof-name{font-family:var(--font-d); font-weight:600; font-size:13px; color:var(--ink-2)}
 .bubble{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:13.5px; line-height:1.45; color:var(--ink)}
 .bubble::before{content:""; position:absolute; left:-7px; top:16px; width:12px; height:12px; background:var(--surface-2); border-left:1px solid var(--line); border-bottom:1px solid var(--line); transform:rotate(45deg)}
 .prof-meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-m); font-size:11.5px; color:var(--ink-3)}
@@ -177,8 +178,9 @@ button{font-family:inherit}
     <div class="note">Answers are computed in code. Your exam tables round to 3 or 4 decimals, so expect small differences.</div>
   </header>
   <section class="prof" id="prof" aria-live="polite">
-    <div class="prof-face" id="profFace" role="img" aria-label="Your professor"></div>
+    <div class="prof-face" id="profFace" role="img" aria-label="Professor Wei"></div>
     <div class="prof-body">
+      <div class="prof-name">Professor Wei</div>
       <div class="bubble" id="profSay"></div>
       <div class="prof-meta"><span id="profMood"></span><div class="meter"><i id="profBar"></i></div><button type="button" class="linkbtn" id="profReset">Reset</button></div>
     </div>
@@ -1822,7 +1824,7 @@ var VARIANTS={
 MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+t.id];if(v)t.variants=v.map(function(x,i){return {id:'v'+i,label:x[0],re:x[1]};});});});
 
 /* ================= the professor ================= */
-var PROF_MOODS=['Skeptical','Warming up','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=2;
+var PROF_MOODS=['Skeptical','Warming up','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=3;
 var PROF_GREET=[
   ['Ah, a new student. I’m withholding judgment. And pride.','Finish one question and I’ll consider smiling.'],
   ['You’re back. I’m allowed to be slightly impressed.','Keep going. My eyebrow is starting to relax.'],
@@ -1834,7 +1836,7 @@ var PROF_DONE=[
   ['One down. I’m cautiously not disappointed.','You read the steps! Revolutionary.','A finished question. Someone mark the calendar.'],
   ['Another one! My left eyebrow is lowering.','Nice. That’s what we in the business call progress.','Two things I like: probability, and you finishing things.'],
   ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant roll.','That was clean. Do another, I’m enjoying this.'],
-  ['Magnificent. I need a moment.','You’re making this old professor very happy.','Textbook. And I have read the textbook.'],
+  ['Magnificent. I need a moment.','You’re making this professor very happy.','Textbook. And I have read the textbook.'],
   ['I can’t stop smiling. Someone get me a tissue.','Legend. They’ll name a p-value after you.','The exam won’t know what hit it.']
 ];
 var PROF_LEVELUP=['','Level up! I’m warming up to you.','Level up! I’m officially pleased. Don’t tell the other students.','Level up! I’m proud. Excuse me, something is in my eye.','Level up! I’m overjoyed. I may cry on the whiteboard.'];
@@ -1866,28 +1868,30 @@ function profSVG(m){
   var sad=m<0,ey=sad?46:43;
   var brows=sad?['M25 36 L42 29','M54 29 L71 36']:[['M25 33 Q33 26 42 31','M54 35 L68 35'],['M25 32 Q33 28 42 32','M54 32 Q62 28 70 32'],['M25 34 Q33 30 42 34','M54 34 Q62 30 70 34'],['M25 30 Q33 25 42 30','M54 30 Q62 25 70 30'],['M25 28 Q33 22 42 28','M54 28 Q62 22 70 28']][m];
   var mouth=sad?'M37 74 Q48 64 59 74':['M38 71 L58 69','M37 68 Q48 74 59 68','M35 66 Q48 78 61 66','M34 64 Q48 84 62 64 Z','M33 63 Q48 88 63 63 Z'][m];
-  var open=m>=3;
+  var open=m>=3,hair='#2a2830';
   var eyes=m===4
     ?'<path d="M27 46 Q33 38 39 46" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M57 46 Q63 38 69 46" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
     :'<circle cx="'+(m===0?35:33)+'" cy="'+ey+'" r="3.2" fill="#23283f"/><circle cx="'+(m===0?65:63)+'" cy="'+ey+'" r="3.2" fill="#23283f"/>';
+  var gy=m===4?43:ey;
   var s='<svg viewBox="0 0 96 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
-  s+='<circle cx="13" cy="42" r="8" fill="#c9cdd8"/><circle cx="14" cy="54" r="6" fill="#c9cdd8"/><circle cx="83" cy="42" r="8" fill="#c9cdd8"/><circle cx="82" cy="54" r="6" fill="#c9cdd8"/>';
+  s+='<ellipse cx="14" cy="56" rx="9" ry="26" fill="'+hair+'"/><ellipse cx="82" cy="56" rx="9" ry="26" fill="'+hair+'"/>';
+  s+='<path d="M20 98 Q22 86 38 83 L48 91 L58 83 Q74 86 76 98 Z" style="fill:var(--accent)"/><path d="M41 83 L48 93 L55 83 L52 81 L48 85 L44 81Z" fill="#fff"/>';
   s+='<ellipse cx="48" cy="46" rx="32" ry="35" fill="#f1c8a0" stroke="#23283f" stroke-width="2"/>';
-  s+='<path d="M36 15 Q48 8 60 15" stroke="#c9cdd8" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  s+='<path d="M16 36 Q12 10 48 7 Q84 10 80 36 Q68 14 48 16 Q30 16 18 36 Z" fill="'+hair+'"/>';
+  s+='<circle cx="17" cy="58" r="2.2" fill="#ffd166"/><circle cx="79" cy="58" r="2.2" fill="#ffd166"/>';
   if(m>=3)s+='<ellipse cx="25" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/><ellipse cx="71" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/>';
   s+=eyes;
-  s+='<circle cx="33" cy="'+(m===4?43:ey)+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><circle cx="63" cy="'+(m===4?43:ey)+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><path d="M44 '+(m===4?43:ey)+' L52 '+(m===4?43:ey)+'" stroke="#23283f" stroke-width="2"/>';
+  s+='<circle cx="33" cy="'+gy+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><circle cx="63" cy="'+gy+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><path d="M44 '+gy+' L52 '+gy+'" stroke="#23283f" stroke-width="2"/>';
   s+='<path d="'+brows[0]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="'+brows[1]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
   s+='<path d="M48 49 Q44 57 49 58" stroke="#23283f" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
   s+='<path d="'+mouth+'" stroke="#23283f" stroke-width="2.4" fill="'+(open?'#8a2f3b':'none')+'" stroke-linecap="round" stroke-linejoin="round"/>';
   if(sad)s+='<ellipse cx="27" cy="60" rx="2" ry="3.4" fill="#7cc7f5"/>';
   if(m===4)s+='<ellipse cx="28" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><ellipse cx="68" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><path d="M8 14 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#ffd166"/><path d="M86 10 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z" fill="#ffd166"/>';
-  s+='<path d="M36 92 L48 97 L60 92 L60 100 L48 96 L36 100z" style="fill:var(--accent)"/><circle cx="48" cy="96" r="3" style="fill:var(--accent)"/>';
   return s+'</svg>';
 }
 function renderProf(line,pop){
   var l=profLevel(PROF.pts),face=document.getElementById('profFace'),next=PROF_AT[l+1],name=profSad?'Disappointed':PROF_MOODS[l];
-  face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Your professor, mood: '+name);
+  face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Professor Wei, mood: '+name);
   document.getElementById('profSay').textContent=line;
   document.getElementById('profMood').textContent=name+' · pride '+PROF.pts+(next?' · '+(next-PROF.pts)+' to '+PROF_MOODS[l+1].toLowerCase():'')+' · '+PROF.total+' solved';
   document.getElementById('profBar').style.width=(next?Math.round((PROF.pts-PROF_AT[l])/(next-PROF_AT[l])*100):100)+'%';
