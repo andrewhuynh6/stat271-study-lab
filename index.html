@@ -2009,13 +2009,13 @@ function profInner(m){
     ?'<path d="M27 46 Q33 38 39 46" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M57 46 Q63 38 69 46" stroke="'+ink+'" stroke-width="2.8" fill="none" stroke-linecap="round"/>'
     :'<circle cx="'+(m===0?35:33)+'" cy="'+ey+'" r="3.4" fill="'+ink+'"/><circle cx="'+(m===0?65:63)+'" cy="'+ey+'" r="3.4" fill="'+ink+'"/>';
   var gy=m===4?43:ey,fy=gy+2,s='';
-  s+='<path d="M12 50 Q2 8 49 4 Q94 8 84 50 Q91 72 90 93 Q82 99 75 91 Q72 72 76 58 L20 58 Q24 72 21 91 Q14 99 6 93 Q5 72 12 50 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="3.2" stroke-linejoin="round"/>';
+  s+='<path d="M9 52 Q3 14 49 5 Q93 13 87 52 Q89 72 77 76 L75 56 L21 56 L19 76 Q7 72 9 52 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="3.2" stroke-linejoin="round"/>';
   s+='<path d="M16 99 Q18 85 37 82 L48 92 L59 82 Q78 85 80 99 Z" fill="#e8664a" stroke="'+k+'" stroke-width="3.4" stroke-linejoin="round"/>';
   s+='<path d="M40 83 L48 96 L56 83 L52 80 L48 86 L44 80 Z" fill="#fffaf0" stroke="'+k+'" stroke-width="2.4" stroke-linejoin="round"/>';
   s+='<path d="M23 96 l3 -5 M73 96 l-3 -5" stroke="'+k+'" stroke-width="2" stroke-linecap="round"/>';
   s+='<path d="M16 46 Q15 12 48 11 Q81 12 80 46 Q79 82 48 82 Q17 82 16 46 Z" fill="'+skin+'" stroke="'+k+'" stroke-width="3.4" stroke-linejoin="round"/>';
-  s+='<path d="M15 42 Q10 7 48 4 Q86 7 81 42 Q79 26 68 22 Q52 18 38 27 Q24 32 15 42 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="2.8" stroke-linejoin="round"/>';
-  s+='<path d="M16 40 Q10 60 13 82 Q21 78 22 62 Q21 50 22 38 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="2.6" stroke-linejoin="round"/><path d="M80 40 Q86 60 83 82 Q75 78 74 62 Q75 50 74 38 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="2.6" stroke-linejoin="round"/>';
+  s+='<path d="M15 36 Q11 8 48 5 Q85 8 81 36 Q74 18 62 21 Q52 12 40 21 Q26 16 15 36 Z" fill="'+hair+'" stroke="'+k+'" stroke-width="2.8" stroke-linejoin="round"/>';
+  s+='<circle cx="17" cy="58" r="2.4" fill="#ffc53d" stroke="'+k+'" stroke-width="1"/><circle cx="79" cy="58" r="2.4" fill="#ffc53d" stroke="'+k+'" stroke-width="1"/>';
   if(m>=3)s+='<ellipse cx="25" cy="59" rx="6" ry="4" fill="#ff8f7d" opacity=".6"/><ellipse cx="71" cy="59" rx="6" ry="4" fill="#ff8f7d" opacity=".6"/><path d="M21 62 l3 -2 M72 62 l3 -2" stroke="#d9604c" stroke-width="1.6" stroke-linecap="round"/>';
   s+=eyes;
   s+='<rect x="21" y="'+(fy-9)+'" width="24" height="19" rx="7" fill="#bcdcff" fill-opacity=".3"/><rect x="51" y="'+(fy-9)+'" width="24" height="19" rx="7" fill="#bcdcff" fill-opacity=".3"/>'
