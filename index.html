@@ -1826,7 +1826,7 @@ MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+
 /* ================= the professor ================= */
 var PROF_MOODS=['Skeptical','Warming up','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=3;
 var PROF_GREET=[
-  ['Ah, a new student. I’m withholding judgment. And pride.','Finish one question and I’ll consider smiling.'],
+  ['Ah, one of my students. I’m saving my pride for when you finish a question.','Finish one question and I’ll consider smiling.'],
   ['You’re back. I’m allowed to be slightly impressed.','Keep going. My eyebrow is starting to relax.'],
   ['Look who’s being productive. I’m smiling. Don’t make it weird.','Solid work so far. I only checked twice.'],
   ['I’m so proud I’m using the good chalk.','You’re doing great. I told the department. They didn’t care, but I did.'],
@@ -1881,7 +1881,7 @@ function profSVG(m){
   s+='<circle cx="17" cy="58" r="2.2" fill="#ffd166"/><circle cx="79" cy="58" r="2.2" fill="#ffd166"/>';
   if(m>=3)s+='<ellipse cx="25" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/><ellipse cx="71" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/>';
   s+=eyes;
-  s+='<circle cx="33" cy="'+gy+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><circle cx="63" cy="'+gy+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><path d="M44 '+gy+' L52 '+gy+'" stroke="#23283f" stroke-width="2"/>';
+  s+='<rect x="21" y="'+(gy-10)+'" width="24" height="20" rx="3.5" fill="#bcdcff" fill-opacity=".28" stroke="#161a2b" stroke-width="3.6"/><rect x="51" y="'+(gy-10)+'" width="24" height="20" rx="3.5" fill="#bcdcff" fill-opacity=".28" stroke="#161a2b" stroke-width="3.6"/><path d="M45 '+gy+' L51 '+gy+'" stroke="#161a2b" stroke-width="3.6"/><path d="M21 '+gy+' L14 '+(gy-2)+'" stroke="#161a2b" stroke-width="2.8" stroke-linecap="round"/><path d="M75 '+gy+' L82 '+(gy-2)+'" stroke="#161a2b" stroke-width="2.8" stroke-linecap="round"/><path d="M26 '+(gy-5)+' L31 '+(gy-7)+'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".85"/><path d="M56 '+(gy-5)+' L61 '+(gy-7)+'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>';
   s+='<path d="'+brows[0]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="'+brows[1]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
   s+='<path d="M48 49 Q44 57 49 58" stroke="#23283f" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
   s+='<path d="'+mouth+'" stroke="#23283f" stroke-width="2.4" fill="'+(open?'#8a2f3b':'none')+'" stroke-linecap="round" stroke-linejoin="round"/>';
