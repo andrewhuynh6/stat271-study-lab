@@ -1829,17 +1829,17 @@ var PROF_GREET=[
   ['Ah, one of my students. I’m saving my pride for when you finish a question.','Finish one question and I’ll consider smiling.'],
   ['You’re back. I’m allowed to be slightly impressed.','Keep going. You’re off to a good start.'],
   ['Look who’s being productive. I’m smiling. Don’t make it weird.','Solid work so far. Keep it up.'],
-  ['I’m so proud I’m using the good chalk.','You’re doing great. I told the department. They didn’t care, but I did.'],
-  ['I’m tearing up. It’s the chalk dust. And pride.','You’ve worked through a heroic number of questions. I’m framing this.']
+  ['Keep this up and I’ll bring out the good chalk.','You’re doing great. I told the department. They didn’t care, but I did.'],
+  ['I’m tearing up. It’s the chalk dust. Mostly.','You’ve worked through a heroic number of questions. I’m framing this.']
 ];
 var PROF_DONE=[
-  ['One down. I’m cautiously not disappointed.','You read the steps! Revolutionary.','A finished question. Someone mark the calendar.'],
-  ['Another one! You’re off to a good start.','Nice. That’s what we in the business call progress.','Two things I like: probability, and you finishing things.'],
+  ['One down. Not bad at all.','You read the steps! Revolutionary.','A finished question. Someone mark the calendar.'],
+  ['Another one! You’re getting the hang of this.','Nice. That’s what we in the business call progress.','Two things I like: probability, and you finishing things.'],
   ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant roll.','That was clean. Do another, I’m enjoying this.'],
   ['Magnificent. I need a moment.','You’re making this professor very happy.','Textbook. And I have read the textbook.'],
   ['I can’t stop smiling. Someone get me a tissue.','Legend. They’ll name a p-value after you.','The exam won’t know what hit it.']
 ];
-var PROF_LEVELUP=['','Level up! Okay, I’m intrigued. Carry on.','Level up! I’m officially pleased. Don’t tell the other students.','Level up! I’m proud. Excuse me, something is in my eye.','Level up! I’m overjoyed. I may cry on the whiteboard.'];
+var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! I’m proud of you. Excuse me, something is in my eye.','Level up! Top marks. I may cry on the whiteboard.'];
 var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I only cried a little. Let’s go.','Okay, that’s one. The sulking is over. Don’t do that again.'];
 function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
 function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
