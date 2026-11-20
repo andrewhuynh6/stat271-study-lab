@@ -502,6 +502,7 @@ function genTransform(){
   var ym=f(mean),ysd=rd(Math.abs(b)*sd,3),iqx=q3-q1,iqy=rd(Math.abs(b)*iqx,3);
   var yform=nz(a)+' '+(b<0?'−':'+')+' '+nz(Math.abs(b))+'x';
   return {
+    story:'You have a list of numbers x. Their average is '+nz(mean)+', their typical wobble (SD) is '+nz(sd)+', and the five-number summary is ('+five.join(', ')+'). Now every number is changed to y = '+yform+' (think: switching units, then adding a bonus). What are the new average, wobble (SD), IQR and five-number summary?',
     text:'A data set x has mean '+nz(mean)+', standard deviation '+nz(sd)+' and five-number summary ('+five.join(', ')+'). Let y = '+yform+'. Find the mean, SD, IQR and five-number summary of y.',
     pills:['mean '+nz(mean),'s = '+nz(sd),'IQR = '+iqx,'b = '+nz(b)],
     steps:[
@@ -570,6 +571,7 @@ function genBayes2(){
   var tp=p*se,fpv=(1-p)*fp,pp=tp+fpv,post=tp/pp;
   var pc=function(v){return nz(rd(v*100,2))+'%';};
   return {
+    story:'A game-show scanner hunts for a hidden prize. The prize hides in '+pc(p)+' of all boxes. When a box has the prize, the scanner beeps '+pc(se)+' of the time. When a box is empty, it still beeps by mistake '+pc(fp)+' of the time. One random box beeps. How likely is it that the prize is really inside?',
     text:'A condition affects '+pc(p)+' of a population. A test is positive for '+pc(se)+' of people who have it and for '+pc(fp)+' of people who do not. A random person tests positive. What is the probability they have the condition?',
     pills:['P(D) = '+nz(p),'P(+|D) = '+nz(se),'P(+|Dᶜ) = '+nz(fp)],
     steps:[
@@ -586,6 +588,7 @@ function genBayes3(){
   var j=rnd(0,2),hit=sh.map(function(w,i){return w*dr[i];}),ht=sum(hit),post=hit[j]/ht;
   var pc=function(v){return nz(rd(v*100,2))+'%';};
   return {
+    story:'A bakery gets its cookies from three bakers, who make '+sh.map(pc).join(', ')+' of the cookies. They burn '+dr.map(pc).join(', ')+' of their cookies (baker 1, 2, 3 in that order). You pick a burnt cookie. How likely is it that baker '+(j+1)+' made it?',
     text:'A shop buys from three suppliers, which provide '+sh.map(pc).join(', ')+' of its stock. Their defect rates are '+dr.map(pc).join(', ')+'. A random item is defective. What is the probability it came from supplier '+(j+1)+'?',
     pills:['shares '+sh.join(' / '),'defects '+dr.join(' / ')],
     steps:[
@@ -624,6 +627,7 @@ function genZ(){
   var lo=kind==='upper'?x1:kind==='lower'?-Infinity:x1,hi=kind==='upper'?Infinity:kind==='lower'?x1:x2;
   var marks=kind==='between'?[{x:x1,label:nz(x1)},{x:x2,label:nz(x2)}]:[{x:x1,label:nz(x1)}];
   return {
+    story:'Picture a big pile of '+who.toLowerCase()+'. Most sit near the middle ('+mu+'), and the further you go from it the fewer there are, with a typical wobble of '+sg+'. Grab one at random. How likely is it that it ends up '+(kind==='upper'?'above '+nz(x1):kind==='lower'?'below '+nz(x1):'between '+nz(x1)+' and '+nz(x2))+'? That is '+ev+'.',
     text:who+' are normally distributed with mean '+mu+' and standard deviation '+sg+'. Find '+ev+'.',
     pills:['μ = '+mu,'σ = '+sg,kind==='between'?'a = '+nz(x1)+', b = '+nz(x2):'x = '+nz(x1)],
     steps:[
@@ -651,6 +655,7 @@ function genXbar(){
   }
   var single=kind==='within'?null:(kind==='upper'?zProb('upper',r2((c-mu)/sg)):zProb('lower',r2((c-mu)/sg)));
   return {
+    story:thing.toLowerCase()+' usually land around '+mu+' with a typical wobble of '+sg+'. Now grab '+n+' of them and take their average. Averages wobble much less than single values. How likely is the event '+ev+' for that average?',
     text:thing+' have mean '+mu+' and standard deviation '+sg+' and are normally distributed. A random sample of n = '+n+' is taken. Find '+ev+'.',
     pills:['μ = '+mu,'σ = '+sg,'n = '+n,'SE = '+nz(rd(se,4))],
     steps:[
@@ -669,6 +674,7 @@ function genSum(){
   var zp=zProb(kind,z),ev=kind==='upper'?'P(S > '+sv+')':'P(S < '+sv+')';
   var thing=pick(['claims','orders','rounding errors','visits']);
   return {
+    story:'You add up '+n+' '+thing+'. Each one averages '+mu+' with a typical wobble of '+sg+' (nobody knows the exact shape). Add enough of them and the total always looks bell-shaped, which is the CLT. How likely is the total to be '+(kind==='upper'?'above ':'below ')+sv+'? That is '+ev+'.',
     text:'The total S of n = '+n+' independent '+thing+' is formed, each with mean '+mu+' and standard deviation '+sg+' (distribution unknown). Use the CLT to approximate '+ev+'.',
     pills:['n = '+n,'μ = '+mu,'σ = '+sg],
     steps:[
@@ -716,6 +722,7 @@ function genDisc(){
   var xs=[];for(var q=Math.max(0,Math.round(mean-3.6*sd));q<=Math.round(mean+3.6*sd)&&(!bin||q<=n);q++)xs.push(q);
   var ztxt=kind==='btw'?'z₁ = ('+(a-0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc1,2)+'\nz₂ = ('+(b+0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc2,2):'z = ('+(kind==='le'?a+0.5:a-0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc1,2);
   return {
+    story:'Count something that follows '+nm+'. Counting is jumpy, but with big numbers the jumps blur into a smooth bell shape, so we can use the bell curve instead. Because counts jump by whole steps, we nudge the edge by half a step (the continuity correction). Estimate '+ev+', then compare with the exact answer.',
     text:nm+'. Use the normal approximation with continuity correction to estimate '+ev+', then compare with the exact value.',
     pills:[nm,'μ = '+nz(rd(mean,4)),'σ = '+nz(rd(sd,4))],
     steps:[
@@ -749,6 +756,7 @@ function genSplit(){
   var ps=poisSteps(lam,k,kind),ev=kind==='ge'?'at least '+k:kind==='le'?'at most '+k:'exactly '+k;
   var thing=pick([['patients arrive at an emergency room','are injured in accidents'],['emails arrive in an inbox','are spam'],['cars pass a checkpoint','are trucks']]);
   return {
+    story:'Think of balls rolling down a chute, on average '+r+' per hour (like when '+thing[0]+'). Each ball is independently painted red with probability '+pf+' (red means they '+thing[1]+'). In '+t+' hour'+(t===1?'':'s')+', how likely are '+ev+' red balls?',
     text:'On average '+r+' '+thing[0].replace(' arrive',' arrive per hour')+'. Arrivals form a Poisson process, and each one independently '+thing[1].replace('are','is')+' with probability '+pf+'. What is the probability that '+ev+' of them in '+t+' hour'+(t===1?'':'s')+'?',
     pills:['rate '+r+'/h','p = '+pf,'t = '+t+' h'],
     steps:[
@@ -765,6 +773,7 @@ function genIndep(){
   do{r=pick([6,10,12,20,30]);t1=pick([10,15,20]);T2=t1+pick([10,15,20,30]);j=pick([1,2,3]);n=j+pick([3,5,8,9]);lam=r*(T2-t1)/60;}while(lam<2.5||lam>10);
   var need=n-j,kind='ge',ps=poisSteps(lam,need,kind);
   return {
+    story:'Balls roll down a chute at random moments, '+r+' per hour on average. In the first '+t1+' minutes, '+j+' ball'+(j>1?'s have':' has')+' already rolled by. The chute has no memory, so that early count does not change what comes next. How likely is it that at least '+n+' balls have rolled by minute '+T2+'?',
     text:'Customers arrive at a bank as a Poisson process at '+r+' per hour. '+j+' customer'+(j>1?'s have':' has')+' arrived in the first '+t1+' minutes. What is the probability that at least '+n+' customers have arrived by minute '+T2+'?',
     pills:['rate '+r+'/h','first '+t1+' min: '+j,'by '+T2+' min: ≥ '+n],
     steps:[
@@ -783,6 +792,7 @@ function genNth(){
     return {x0:0,x1:x1,ymax:pk,curves:[{f:g,color:'accent',lw:2.6,from:0}],shades:[{f:g,a:0,b:tmin,color:'accent',alpha:.3,from:3}],
       vlines:[{x:mean,label:'mean '+nz(rd(mean,2)),color:'warn',from:2},{x:tmin,label:tmin+' min',color:'ink3',from:3}],label:{text:'P = '+fx(P,4),from:4},title:'Tₙ, time of arrival number '+n+' (minutes)'};};
   return {
+    story:'Balls roll down a chute at random moments, '+r+' per hour on average. How long do you wait on average for ball number '+n+'? And how likely is it that ball number '+n+' shows up within '+tmin+' minutes?',
     text:'Customers arrive at a bank as a Poisson process at '+r+' per hour. Find the expected time of the '+n+(n===3?'rd':'th')+' customer, and the probability that the '+n+(n===3?'rd':'th')+' customer arrives within '+tmin+' minutes.',
     pills:['rate '+r+'/h','n = '+n,'t = '+tmin+' min'],
     steps:[
@@ -801,6 +811,7 @@ function genMemoryless(){
       shades:[{f:fs,a:s0+t0,b:x1,color:'accent',alpha:.3,from:3}],vlines:[{x:s0,label:'age s = '+s0,color:'ink3',from:2},{x:s0+t0,label:'s + t = '+(s0+t0),color:'warn',from:2}],
       label:{text:'P = e^(−λt) = '+fx(ans,4),from:4},sub:{text:'dashed = same curve restarted at s',from:3,color:'accent'}};};
   return {
+    story:'Imagine a timer with no memory: '+u[0].toLowerCase()+' a random time with a rate of '+l+' per '+(u[1]==='years'?'year':u[1].slice(0,-1))+' (about '+nz(rd(1/l,4))+' '+u[1]+' on average). It has already run for '+s0+' '+u[1]+'. Surprise: it forgets the past, so it acts brand new. How likely is it to last at least '+t0+' more '+u[1]+', and how long should you still expect to wait?',
     text:u[0]+' an exponential time with rate λ = '+l+' per '+(u[1]==='years'?'year':u[1].slice(0,-1))+' (mean '+nz(rd(1/l,4))+' '+u[1]+'). It has already lasted '+s0+' '+u[1]+'. Find the probability it lasts at least '+t0+' more '+u[1]+', and its expected remaining time.',
     pills:['λ = '+l,'s = '+s0,'t = '+t0],
     steps:[
@@ -823,6 +834,7 @@ function genMin(){
     return {x0:0,x1:x1,ymax:L,curves:curves,shades:[{f:function(x){return L*Math.exp(-L*x);},a:t,b:x1,color:'accent',alpha:.3,from:3}],
       vlines:[{x:mean,label:'mean '+nz(rd(mean,3)),color:'warn',from:2},{x:t,label:'t = '+nz(t),color:'ink3',from:3}],label:{text:'P = '+fx(ans,5),from:4},sub:{text:'dashed = each component, solid = system',from:2,color:'sky'},title:'lifetimes in hours'};};
   return {
+    story:'A string of '+k+' Christmas lights where the whole string goes dark as soon as the first bulb dies. Each bulb lasts a random time, with an average of '+(k===10?ms[0]+' hours each':ms.join(', ')+' hours')+'. How long should the string stay lit on average, and how likely is it to still be lit after '+nz(t)+' hours?',
     text:'A system has '+k+' independent components in series, so it fails when the first one fails. Component lifetimes are exponential with means '+(k===10?ms[0]+' hours each':ms.join(', ')+' hours')+'. Find the expected system lifetime and the probability the system lasts more than '+nz(t)+' hours.',
     pills:[k+' components','means '+(k===10?ms[0]+' h':ms.join(', ')+' h'),'t = '+nz(t)+' h'],
     steps:[
@@ -884,6 +896,7 @@ function genJoint(){
   var shown=p.map(function(r,i){return r.map(function(v,j){return (i===hi&&j===hj)?'c':fx(v,2);}).join('  ');});
   var others=[];for(var a3=0;a3<3;a3++)for(var b3=0;b3<3;b3++)if(!(a3===hi&&b3===hj))others.push(p[a3][b3]);
   return {
+    story:'A ball lands on a small grid. The table says how likely each spot is, where X is how far right and Y is how far back, but one spot’s chance is hidden as c. Find c, the chance for each column and each row, the average right and back, how much right and back move together (Cov), whether right and back ignore each other (independent), and the chance that back is 3 when right is at least 1.',
     text:'The table gives the joint pmf of (X, Y); one entry is hidden as c. Find c, the marginals, E(X), E(Y), Cov(X, Y), decide if X and Y are independent, and find P(Y = 3 | X ≥ 1).',
     pills:['x ∈ {0,1,2}','y ∈ {1,2,3}','c at x='+xs[hi]+', y='+ys[hj]],
     steps:[
@@ -930,6 +943,7 @@ function genIterBin(){
   var EX=p*lam,Ew=lam*p*(1-p),Vb=p*p*lam,VX=Ew+Vb;
   var hi=Math.ceil(lam+4*Math.sqrt(lam)),xs=[];for(var i=0;i<=hi;i++)xs.push(i);
   return {
+    story:'The number of shoppers N is random, around '+lam+' (Poisson). Each shopper buys independently with chance '+p+'. How many buyers X do you expect, and how much does that count wobble (Var)?',
     text:'N ~ Poisson('+lam+') customers enter a shop, and each one independently buys with probability '+p+'. Given N = n, the number of buyers X is Binomial(n, '+p+'). Find E(X) and Var(X).',
     pills:['N ~ Poisson('+lam+')','X | N ~ Bin(N, '+p+')'],
     steps:[
@@ -946,6 +960,7 @@ function genIterBin(){
 function genIterPE(){
   var lam=pick([0.5,1,2]),EX=1/lam,Ew=1/lam,Vb=1/(lam*lam),VX=Ew+Vb;
   return {
+    story:'First a random waiting time Y is drawn (exponential, rate '+lam+'). Then X counts how many events happen, at an average of y events, where y is the time you drew. Find the average and wobble (E and Var) of X.',
     text:'Y is exponential with rate '+lam+'. Given Y = y, X ~ Poisson(y). Find E(X) and Var(X).',
     pills:['Y ~ Exp('+lam+')','X | Y ~ Poisson(Y)'],
     steps:[
@@ -962,6 +977,7 @@ function genIterPE(){
 function genIterNN(){
   var mu=pick([10,20,50]),tau=pick([2,3,4]),sg=pick([1,2,3]),VX=sg*sg+tau*tau;
   return {
+    story:'A machine’s setting Y is itself random: around '+mu+' with a spread of '+tau+'. Given the setting y, the reading X sits around y with an extra spread of '+sg+'. Find the average and wobble (E and Var) of X.',
     text:'Y ~ N('+mu+', '+tau+'²). Given Y = y, X ~ N(y, '+sg+'²). Find E(X) and Var(X).',
     pills:['Y ~ N('+mu+', '+tau*tau+')','X | Y ~ N(Y, '+sg*sg+')'],
     steps:[
@@ -986,7 +1002,8 @@ function genEV(){
     var EX=sum(p.map(function(v,i){return i*v;})),EX2=sum(p.map(function(v,i){return i*i*v;})),V=EX2-EX*EX,sd=Math.sqrt(V);
     var EL=a*EX+b,VL=a*a*V;
     return {
-      text:'A discrete random variable X takes the values 0, 1, 2, 3 with probabilities '+ps.join(', ')+' respectively. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
+      story:'You spin a prize wheel with prizes 0, 1, 2 and 3. Their chances are '+ps.join(', ')+' in that order. Find the average prize E(X), how much it wobbles Var(X), and the same two numbers after the prize is changed to '+lin+'.',
+    text:'A discrete random variable X takes the values 0, 1, 2, 3 with probabilities '+ps.join(', ')+' respectively. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
       pills:['x = 0, 1, 2, 3','p = ('+ps.join(', ')+')'],
       steps:[
         S('Expected value','E(X) = Σ x·p(x).','E(X) = '+xs.map(function(x,i){return x+'('+ps[i]+')';}).join(' + ')+' = '+fx(EX,4),'E(X) = '+fx(EX,4)),
@@ -1024,6 +1041,7 @@ function genEV(){
   }
   var Vc=EX2c-EXc*EXc,sdc=Math.sqrt(Vc),ELc=a*EXc+b,VLc=a*a*Vc;
   return {
+    story:'A random amount X follows the curve '+ftxt+' (0 everywhere else), so higher curve means more likely. Find its average E(X) and wobble Var(X), then the same two numbers after changing it to '+lin+'.',
     text:'A continuous random variable X has pdf '+ftxt+', and 0 elsewhere. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
     pills:[ftxt],
     steps:[
@@ -1169,6 +1187,7 @@ function genJpdf(){
   var cap=['','Darker means more probability. The whole volume under the surface is 1.','Add up one strip at a time. Each vertical strip becomes one point of f_X (top curve), each horizontal strip one point of f_Y (right curve).','The green region is the event. Its probability is the volume above it.','We only look along the dashed line. The orange curve is the pdf along that line, rescaled so it adds to 1. The shaded part is the probability.','The green line is the average of X for each y. Averaging that line over y gives E(X) (the dashed vertical line).',indep?'The surface is exactly f_X × f_Y, so X and Y are independent.':'If X and Y were independent, the surface would equal f_X × f_Y everywhere. It does not.'];
   return {
     tall:true,
+    story:'Drop a ball on a field. The heat map '+fl+' over '+dom+' (nothing outside) says where it tends to land: X is how far right, Y is how far back. Find the scale c that makes the total chance 1, the heat along each side (marginals), '+evTxt+', the chance that right is below '+nz(s0)+' when back is exactly '+nz(y0)+', and the average right using E(X) = E[E(X | Y)]. Do right and back affect each other?',
     text:'The joint pdf of (X, Y) is '+fl+' for '+dom+', and 0 elsewhere. Find c, the marginal pdfs, '+evTxt+', P(X < '+nz(s0)+' | Y = '+nz(y0)+'), and E(X) using E(X) = E[E(X | Y)]. Are X and Y independent?',
     pills:[fl,dom],
     steps:steps,
@@ -1186,7 +1205,8 @@ function genIter(){
     var lam=pick([3,4,5,6,8,10]),EY=lam/2,Ew=(lam+lam*lam)/12,Vb=lam/4,VY=Ew+Vb;
     var hi=Math.ceil(lam+4*Math.sqrt(lam)),xs=[];for(var i=0;i<=hi;i++)xs.push(i);
     return {
-      text:'X ~ Poisson('+lam+'). Given X = x, Y is uniform on [0, x]. Find E(Y) and Var(Y).',
+      story:'First roll up a random count X that is Poisson('+lam+'). Then pick a number Y anywhere between 0 and X, all values equally likely. Find the average and wobble (E and Var) of Y.',
+    text:'X ~ Poisson('+lam+'). Given X = x, Y is uniform on [0, x]. Find E(Y) and Var(Y).',
       pills:['X ~ Poisson('+lam+')','Y | X ~ U[0, X]'],
       steps:[
         S('Conditional mean and variance','Given X = x, Y ~ U[0, x], which has mean x/2 and variance x²/12.','E(Y | X) = X/2,    Var(Y | X) = X²/12'),
@@ -1201,6 +1221,7 @@ function genIter(){
   var a=pick([1,1,2]),b=a+pick([1,1,2]);
   var EY2=Math.log(b/a)/(b-a),E2=1/(a*b),VY2=2*E2-EY2*EY2,Vb2=E2-EY2*EY2;
   return {
+    story:'A dial U is set anywhere between '+a+' and '+b+', all settings equally likely. Then a random waiting time Y is drawn with rate u (a bigger u means a shorter wait). Find the average and wobble (E and Var) of Y.',
     text:'U ~ Uniform['+a+', '+b+']. Given U = u, Y is exponential with rate u. Find E(Y) and Var(Y).',
     pills:['U ~ U['+a+','+b+']','Y | U ~ Exp(U)'],
     steps:[
@@ -1232,6 +1253,7 @@ function genVarSum(){
     });
   };
   return {
+    story:'Two wobbly numbers: X wobbles with Var(X) = '+vx+', and Y with Var(Y) = '+vy+(useRho?', and they move together with correlation ρ = '+nz(rho):', and they move together with Cov(X, Y) = '+nz(cov))+'. If you mix them as '+expr+', how much does the mix wobble, Var('+expr+')?',
     text:'X and Y have Var(X) = '+vx+' and Var(Y) = '+vy+(useRho?' and correlation ρ = '+nz(rho):' and Cov(X, Y) = '+nz(cov))+'. Find Var('+expr+').',
     pills:['Var(X) = '+vx,'Var(Y) = '+vy,useRho?'ρ = '+nz(rho):'Cov = '+nz(cov),'a = '+a+', b = '+b],
     steps:[
@@ -1269,24 +1291,28 @@ function genCheb(){
   var v=pick(['two','inner','lln','markov']);
   if(v==='two'){
     var mu=pick([50,75,100]),sd=pick([3,4,5,10]),kk=pick([1.5,2,2.5,3,4]),d=rd(kk*sd,2),ans=1/(kk*kk);
-    return {text:'X has mean '+mu+' and standard deviation '+sd+', and its distribution is unknown. Find an upper bound for P(|X − '+mu+'| ≥ '+nz(d)+').',pills:['μ = '+mu,'σ = '+sd,'d = '+nz(d)],
+    return {story:'You only know the average ('+mu+') and the typical wobble ('+sd+'), not the shape. What is the largest the chance can be that X lands at least '+nz(d)+' away from '+mu+'?',
+    text:'X has mean '+mu+' and standard deviation '+sd+', and its distribution is unknown. Find an upper bound for P(|X − '+mu+'| ≥ '+nz(d)+').',pills:['μ = '+mu,'σ = '+sd,'d = '+nz(d)],
       steps:[S('Which inequality?','The distribution is unknown, only a mean and a standard deviation are given, and we want a bound on how far X strays from its mean. That is Chebyshev, which holds for any distribution. Markov would ignore the standard deviation.','P(|X − μ| ≥ kσ) ≤ 1/k²'),S('Find k','Express the distance in SD units.','k = d/σ = '+nz(d)+'/'+sd+' = '+nz(kk)),S('Bound','','P ≤ 1/k² = 1/'+nz(rd(kk*kk,4)),'P(|X − '+mu+'| ≥ '+nz(d)+') ≤ '+fx(ans,4),'warn')],
       draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:mu-4.2*sd,x1:mu+4.2*sd,mu:mu,muLabel:'μ = '+mu,marks:[{x:mu-d,label:nz(rd(mu-d,2))},{x:mu+d,label:nz(rd(mu+d,2))}],tails:[[mu-5*sd-d,mu-d],[mu+d,mu+5*sd+d]],tailLabel:'',head:'P(|X − μ| ≥ d) ≤ '+fx(ans,4),inner:null});}};
   }
   if(v==='inner'){
     var mu2=pick([50,75,100]),sd2=pick([3,4,5,10]),dd=pick([2,2.5,3,4])*sd2,lb=1-1/Math.pow(dd/sd2,2);
-    return {text:'X has mean '+mu2+' and variance '+sd2*sd2+', and its distribution is unknown. Find a lower bound for P('+nz(rd(mu2-dd,2))+' < X < '+nz(rd(mu2+dd,2))+').',pills:['μ = '+mu2,'σ² = '+sd2*sd2],
+    return {story:'You only know the average ('+mu2+') and the spread (variance '+sd2*sd2+'), not the shape. What is the smallest the chance can be that X stays between '+nz(rd(mu2-dd,2))+' and '+nz(rd(mu2+dd,2))+'?',
+    text:'X has mean '+mu2+' and variance '+sd2*sd2+', and its distribution is unknown. Find a lower bound for P('+nz(rd(mu2-dd,2))+' < X < '+nz(rd(mu2+dd,2))+').',pills:['μ = '+mu2,'σ² = '+sd2*sd2],
       steps:[S('Which inequality?','The distribution is unknown and a mean and a variance are given, so the tool is Chebyshev. A lower bound on an interval comes from the complement of its tail bound.','P(|X − μ| ≥ kσ) ≤ 1/k²'),S('Recenter the interval','The interval is μ ± '+nz(dd)+', so it is the event |X − μ| < '+nz(dd)+'.','k = '+nz(dd)+'/'+sd2+' = '+nz(dd/sd2)),S('Complement of the tail bound','Chebyshev bounds the outside, so the inside is at least 1 minus that.','P(inside) ≥ 1 − 1/k² = 1 − 1/'+nz(rd(Math.pow(dd/sd2,2),4)),'P ≥ '+fx(lb,4),'warn')],
       draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:mu2-4.4*sd2,x1:mu2+4.4*sd2,mu:mu2,muLabel:'μ = '+mu2,marks:[{x:mu2-dd,label:nz(rd(mu2-dd,2))},{x:mu2+dd,label:nz(rd(mu2+dd,2))}],inner:[mu2-dd,mu2+dd],innerLabel:'≥ '+fx(lb,3)});}};
   }
   if(v==='lln'){
     var sg=pick([3,4,5,8,10]),E=pick([0.5,1,2]),conf=pick([0.9,0.95,0.99]),n=Math.ceil(sg*sg/((1-conf)*E*E));
-    return {text:'Observations have standard deviation '+sg+' and an unknown distribution. How large must n be to guarantee that P(|X̄ − μ| < '+E+') ≥ '+conf+'?',pills:['σ = '+sg,'E = '+E,'confidence '+conf],
+    return {story:'Each measurement wobbles by '+sg+' and you do not know the shape. How many measurements n guarantee, with at least '+conf+' certainty, that their average lands within '+E+' of the truth?',
+    text:'Observations have standard deviation '+sg+' and an unknown distribution. How large must n be to guarantee that P(|X̄ − μ| < '+E+') ≥ '+conf+'?',pills:['σ = '+sg,'E = '+E,'confidence '+conf],
       steps:[S('Which inequality?','The distribution is unknown and only the standard deviation is given, so Chebyshev is the only tool. Apply it to the sample mean X̄, which has mean μ and variance σ²/n.','Var(X̄) = '+(sg*sg)+'/n'),S('Chebyshev for X̄','P(|X̄ − μ| ≥ E) ≤ Var(X̄)/E², so the inside has probability at least 1 − σ²/(nE²).','1 − '+(sg*sg)+'/(n·'+(E*E)+') ≥ '+conf),S('Solve for n','Rearrange, then round up to a whole number.','n ≥ '+(sg*sg)+' / ('+nz(rd(1-conf,4))+' × '+(E*E)+') = '+nz(rd(sg*sg/((1-conf)*E*E),3)),'n = '+n,'warn')],
       draw:function(ctx,W,H,s,C){drawLLN(ctx,W,H,s,C,{n:n,v:sg*sg,E:E,conf:conf});}};
   }
   var m=pick([20,40,50,100]),tt=m*pick([1.5,2,2.5,3,4]);
-  return {text:'X is a nonnegative random variable with mean '+m+', and nothing else is known. Find an upper bound for P(X > '+nz(tt)+').',pills:['E(X) = '+m,'t = '+nz(tt)],
+  return {story:'A nonnegative amount X averages '+m+', and that is all you know. What is the largest the chance can be that X goes above '+nz(tt)+'?',
+    text:'X is a nonnegative random variable with mean '+m+', and nothing else is known. Find an upper bound for P(X > '+nz(tt)+').',pills:['E(X) = '+m,'t = '+nz(tt)],
     steps:[S('Which inequality?','X cannot be negative and only its mean is known, with no variance, so use Markov. Chebyshev would need a variance.','P(X ≥ t) ≤ E(X)/t'),S('Plug in','','P(X > '+nz(tt)+') ≤ '+m+'/'+nz(tt),'P ≤ '+fx(m/tt,4),'warn')],
     draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:0,x1:tt*1.6,mu:m,muLabel:'E(X) = '+m,marks:[{x:tt,label:'t = '+nz(tt)}],tails:[[tt,tt*2]],tailLabel:'≤ '+fx(m/tt,3),inner:null,th:{mean:1,marks:1,region:2}});}};
 }
@@ -1304,6 +1330,7 @@ function genS2(){
   var lo=kind==='upper'?stat:0,hi=kind==='upper'?1e9:stat;
   var brk=(function(){var al=[0.995,0.99,0.975,0.95,0.9,0.1,0.05,0.025,0.01,0.005],o=[];al.forEach(function(a){o.push([a,chi2up(a,df)]);});var i=0;while(i<o.length&&o[i][1]<stat)i++;if(i===0)return '< '+o[0][0];if(i===o.length)return '> '+o[o.length-1][0];return 'between '+o[i-1][0]+' and '+o[i][0];})();
   return {
+    story:'You measure '+n+' values from a bell-shaped population that wobbles by '+sg+'. The sample’s own wobble (S²) jumps around from sample to sample. How likely is the event '+ev+'?',
     text:'A sample of n = '+n+' is drawn from a normal population with standard deviation '+sg+'. Find '+ev+'.',
     pills:['n = '+n,'σ = '+sg,'df = '+df],
     steps:[
@@ -1319,18 +1346,21 @@ function genChisq(){
   if(Math.random()<0.5){
     var k=pick([3,4,5,6,8,10,12]),x=Math.max(0.5,rd(k+pick([-1,-0.5,0.5,1,1.5])*Math.sqrt(2*k),1)),kind=pick(['le','ge']);
     var cdf=chi2cdf(x,k),p=kind==='le'?cdf:1-cdf;
-    return {text:'X ~ χ² with '+k+' degrees of freedom. Find P(X '+(kind==='le'?'≤':'>')+' '+nz(x)+').',pills:['df = '+k,'mean '+k,'variance '+2*k],
+    return {story:'Take '+k+' independent bell-curve numbers, square each, and add them up. That total is χ² with '+k+' degrees of freedom. How likely is the total to be '+(kind==='le'?'at most':'above')+' '+nz(x)+'?',
+    text:'X ~ χ² with '+k+' degrees of freedom. Find P(X '+(kind==='le'?'≤':'>')+' '+nz(x)+').',pills:['df = '+k,'mean '+k,'variance '+2*k],
       steps:[S('Know the shape','A chi-square with k df has mean k and variance 2k, and is skewed right.','mean = '+k+',  variance = '+2*k+'  (SD = '+nz(rd(Math.sqrt(2*k),3))+')'),S('Locate x','x = '+nz(x)+' sits '+(x>k?'above':'below')+' the mean '+k+'.'),S('Evaluate','Table lookups give upper-tail areas; use 1 minus for a lower-tail question.','P(X '+(kind==='le'?'≤':'>')+' '+nz(x)+') = '+(kind==='le'?'1 − P(X > '+nz(x)+')':'P(X > '+nz(x)+')')+' = '+fx(p,4),'P = '+fx(p,4))],
       draw:function(ctx,W,H,s,C){var c=chiCfg(k,kind==='le'?0:x,kind==='le'?x:1e9,[x],'P = '+fx(p,4),Math.max(chi2q(0.9985,k),x*1.3));c.shades[0].from=2;c.label.from=3;drawDensity(ctx,W,H,s,C,c);}};
   }
   var a=pick([2,3,4,5]),b=pick([3,4,6,8]),df=a+b,x=Math.round(df+pick([0,1,2])*Math.sqrt(2*df)),p=1-chi2cdf(x,df);
-  return {text:'X ~ χ² with '+a+' df and Y ~ χ² with '+b+' df are independent. Find P(X + Y > '+x+').',pills:['df_X = '+a,'df_Y = '+b],
+  return {story:'Square and add '+a+' independent bell-curve numbers to get X, and do the same with '+b+' other ones to get Y. How likely is X + Y to be above '+x+'?',
+    text:'X ~ χ² with '+a+' df and Y ~ χ² with '+b+' df are independent. Find P(X + Y > '+x+').',pills:['df_X = '+a,'df_Y = '+b],
     steps:[S('Sums of independent chi-squares','Independent χ² variables add: the degrees of freedom add too.','X + Y ~ χ²_('+a+'+'+b+') = χ²_'+df),S('Evaluate','','P(χ²_'+df+' > '+x+') = '+fx(p,4),'P = '+fx(p,4))],
     draw:function(ctx,W,H,s,C){var c=chiCfg(df,x,1e9,[x],'P = '+fx(p,4),Math.max(chi2q(0.9985,df),x*1.3));c.shades[0].from=1;c.vlines[0].from=1;c.label.from=2;drawDensity(ctx,W,H,s,C,c);}};
 }
 function genDist(){
   var dim=pick([2,3]),sg=pick([1,2,3,5]),q=pick([1,1.5,2,2.5,3]),d=q*sg,stat=q*q,p=1-chi2cdf(stat,dim);
   return {
+    story:'A dart misses the target by a random bell-shaped amount in each of '+dim+' directions, each wobbling by about '+sg+'. How likely is the total distance D from the target to be more than '+nz(d)+'?',
     text:'The position error in each of '+dim+' directions is independent N(0, '+sg+'²). The distance from the target is D = √('+(dim===2?'X² + Y²':'X² + Y² + Z²')+'). Find P(D > '+nz(d)+').',
     pills:[dim+' directions','σ = '+sg,'d = '+nz(d)],
     steps:[
@@ -1361,6 +1391,7 @@ function genT(){
   if(tgt<0)brk='> '+(tail==='two'?0.5:0.25)+' (t is on the wrong side)';
   var ev=tail==='upper'?'P(T > '+fx(t,3)+')':tail==='lower'?'P(T < '+fx(t,3)+')':'2·P(T > '+fx(Math.abs(t),3)+')';
   return {
+    story:'You measured '+n+' values: average '+nz(xbar)+', wobble s = '+s0+'. A friend claims the true average is '+mu0+', and the true wobble is unknown. How many standard errors away is your average (the t statistic), and how likely is a result '+(tail==='two'?'at least this far away in either direction':tail==='upper'?'this high or higher':'this low or lower')+'?',
     text:'A sample of n = '+n+' from a normal population has mean '+nz(xbar)+' and standard deviation s = '+s0+'. With σ unknown, compute the t statistic for H₀: μ = '+mu0+' and its '+(tail==='two'?'two-sided':tail==='upper'?'upper-tail':'lower-tail')+' probability.',
     pills:['n = '+n,'x̄ = '+nz(xbar),'s = '+s0,'df = '+df],
     steps:[
@@ -1408,6 +1439,7 @@ function genMom(){
     cfg={f:function(x){return normPDF(x,xb,sg);},fitLabel:'N('+fx(xb,2)+', '+fx(v2,2)+')',ymax:normPDF(xb,xb,sg),pmf:false};}
   var x0=0,x1=Math.max(30,Math.max.apply(null,dat)+8);
   return {
+    story:'You drew 5 numbers from a '+name+' distribution: '+dat.join(', ')+'. Match the distribution’s average (and spread when needed) to what you saw, to estimate its '+(kind==='gamma'||kind==='normal'?'settings':'setting')+' (method of moments).',
     text:'A random sample from a '+name+' distribution is 5 observations: '+dat.join(', ')+'. Find the method of moments estimate'+(kind==='gamma'||kind==='normal'?'s':'')+'.',
     pills:['n = 5','x̄ = '+sx,'m₂ = '+sm],
     steps:steps,
@@ -1460,6 +1492,7 @@ function genMle(){
     cfg={x0:mn-3/n-0.3,x1:mn+0.6,rel:function(t){return t>mn?0:Math.exp(n*(t-mn));},dom:[mn-3/n-0.3,mn],mle:mn,mleLabel:'θ̂ = '+nz(mn),ylab:'L(θ) / L(min)',th:2,extra:[]};
   }
   return {
+    story:'You drew these numbers from '+name+': '+dat.join(', ')+'. Pick the setting that makes exactly these numbers the most likely (maximum likelihood).',
     text:'A random sample from '+name+' is '+dat.join(', ')+'. Find the maximum likelihood estimate.',
     pills:['n = '+dat.length,'data: '+dat.join(', ')],
     steps:steps,
@@ -1505,6 +1538,7 @@ function genCIz(){
   var al=1-conf,zc=r3(zq(1-al/2)),se=sg/Math.sqrt(n),me=zc*se,L=rd(xb-me,2),U=rd(xb+me,2),pc=nz(rd(conf*100,1))+'%';
   var pz=pivotZ(zc);
   return {
+    story:'You measured '+n+' values and their average is '+nz(xb)+'. The wobble of a single measurement is known: '+sg+'. Build a '+pc+' safety net, a range for the true average that catches it '+pc+' of the time.',
     text:'A sample of n = '+n+' has mean '+nz(xb)+'. The population standard deviation is known to be '+sg+'. Find a '+pc+' confidence interval for μ.',
     pills:['n = '+n,'x̄ = '+nz(xb),'σ = '+sg,pc],
     steps:[
@@ -1525,6 +1559,7 @@ function genCIt(){
   var crit=side==='two'?[{x:-tc,label:'−'+fx(tc,3)},{x:tc,label:fx(tc,3)}]:side==='lower'?[{x:-tc,label:'−'+fx(tc,3)}]:[{x:tc,label:fx(tc,3)}];
   var iv=side==='two'?'('+fx(L,2)+', '+fx(U,2)+')':side==='lower'?'μ > '+fx(L,2)+'   i.e. ('+fx(L,2)+', ∞)':'μ < '+fx(U,2)+'   i.e. (−∞, '+fx(U,2)+')';
   return {
+    story:'You measured '+n+' values: average '+nz(xb)+', wobble s = '+s0+' (estimated from the data). Give a '+pc+' '+(side==='two'?'safety net, a range for the true average':side==='lower'?'floor, the lowest believable true average':'ceiling, the highest believable true average')+'.',
     text:'A sample of n = '+n+' from a normal population has mean '+nz(xb)+' and standard deviation s = '+s0+'. Find a '+pc+(side==='two'?' two-sided confidence interval':side==='lower'?' lower confidence bound':' upper confidence bound')+' for μ.',
     pills:['n = '+n,'x̄ = '+nz(xb),'s = '+s0,'df = '+df,pc],
     steps:[
@@ -1545,6 +1580,7 @@ function genCIvar(){
   var crit=side==='two'?[{x:cl,label:fx(cl,3)},{x:cu,label:fx(cu,3)}]:[{x:cl,label:fx(cl,3)}];
   var iv=side==='two'?'σ² in ('+fx(L,2)+', '+fx(U,2)+')\nσ in ('+fx(Math.sqrt(L),2)+', '+fx(Math.sqrt(U),2)+')':'σ² < '+fx(U,2)+'\nσ < '+fx(Math.sqrt(U),2);
   return {
+    story:'You measured '+n+' values and their wobble is s = '+s0+'. Give a '+pc+' '+(side==='two'?'safety net':'ceiling')+' for how much the whole population really wobbles (the variance σ²).',
     text:'A sample of n = '+n+' from a normal population has standard deviation s = '+s0+'. Find a '+pc+(side==='two'?' two-sided confidence interval':' upper confidence bound')+' for the population variance σ².',
     pills:['n = '+n,'s = '+s0,'df = '+df,pc],
     steps:[
@@ -1572,7 +1608,8 @@ function genCIn(){
   if(Math.random()<0.65){
     var sg=pick([5,8,10,12,15,20]),E=pick([1,1.5,2,2.5,3,4]),conf=pick([0.9,0.95,0.99]),al=1-conf,zc=r3(zq(1-al/2)),raw=Math.pow(zc*sg/E,2),n=Math.ceil(raw),pc=nz(rd(conf*100,1))+'%';
     return {
-      text:'The standard deviation is known to be '+sg+'. How large a sample is needed so a '+pc+' confidence interval for μ has margin of error at most '+E+'?',
+      story:'A single measurement wobbles by '+sg+'. How many measurements do you need so that the '+pc+' safety net for the average is off by at most '+E+'?',
+    text:'The standard deviation is known to be '+sg+'. How large a sample is needed so a '+pc+' confidence interval for μ has margin of error at most '+E+'?',
       pills:['σ = '+sg,'E = '+E,pc],
       steps:[
         S('Margin of error formula','The margin of error is ME = z·σ/√n. It shrinks only like 1/√n, so halving it needs four times the data.','ME = z_(α/2)·σ/√n ≤ E'),
@@ -1584,6 +1621,7 @@ function genCIn(){
   }
   var E2=pick([0.02,0.03,0.05]),conf2=pick([0.9,0.95,0.99]),zc2=r3(zq(1-(1-conf2)/2)),raw2=zc2*zc2*0.25/(E2*E2),n2=Math.ceil(raw2),pc2=nz(rd(conf2*100,1))+'%';
   return {
+    story:'You want to find out what share of people do something, to within ±'+E2+' with '+pc2+' confidence, and you have no clue what the share is. How many people must you ask?',
     text:'You want to estimate a population proportion to within ±'+E2+' with '+pc2+' confidence and have no prior guess for p. How large a sample is needed?',
     pills:['E = '+E2,pc2,'p unknown'],
     steps:[
@@ -1627,6 +1665,7 @@ function genTestZ(){
   var rr=tail==='two'?'|Z| > '+fx(zc,3):tail==='upper'?'Z > '+fx(zc,3):'Z < −'+fx(zc,3);
   var dec=(reject?'Reject H₀: there is sufficient evidence that '+H1+'.':'Fail to reject H₀: not enough evidence that '+H1+'. (This does not prove H₀ is true.)');
   return {
+    story:thing+' says the average is '+mu0+'. You test '+n+' and get an average of '+nz(xb)+' (single-measurement wobble known: '+sg+'). Is the claim wrong? Compare H₀: μ = '+mu0+' with H₁: '+H1+', accepting a false-alarm chance of α = '+alpha+'.',
     text:thing+' claims a mean of '+mu0+'. A sample of n = '+n+' gives x̄ = '+nz(xb)+'. The population SD is known to be '+sg+'. Test H₀: μ = '+mu0+' against H₁: '+H1+' at α = '+alpha+'.',
     pills:['n = '+n,'x̄ = '+nz(xb),'σ = '+sg,'α = '+alpha,tail==='two'?'two-sided':'one-sided'],
     steps:[
@@ -1648,6 +1687,7 @@ function genTestT(){
   var rr=tail==='two'?'|T| > '+fx(tc,3):tail==='upper'?'T > '+fx(tc,3):'T < −'+fx(tc,3);
   var dec=(reject?'Reject H₀: there is sufficient evidence that '+H1+'.':'Fail to reject H₀: not enough evidence that '+H1+'.');
   return {
+    story:'You test a claim that the average is '+mu0+'. A sample of '+n+' gives an average of '+nz(xb)+' and a wobble of s = '+s0+' (the true wobble is unknown). Compare H₀: μ = '+mu0+' with H₁: '+H1+', accepting a false-alarm chance of α = '+alpha+'.',
     text:'A sample of n = '+n+' from a normal population has x̄ = '+nz(xb)+' and s = '+s0+'. Test H₀: μ = '+mu0+' against H₁: '+H1+' at α = '+alpha+'. The population SD is unknown.',
     pills:['n = '+n,'x̄ = '+nz(xb),'s = '+s0,'df = '+df,'α = '+alpha],
     steps:[
@@ -1678,6 +1718,7 @@ function genPower(){
   var zb=function(c){return fx(r2((c-mu1)/se),2);};
   var bform=!two?'β = P(X̄ < '+nz(c1)+' | μ = '+nz(mu1)+') = Φ(('+nz(c1)+' − '+nz(mu1)+')/'+nz(rd(se,4))+') = Φ('+zb(c1)+') = '+fx(beta,4):'β = P('+nz(c1)+' < X̄ < '+nz(c2)+' | μ = '+nz(mu1)+')\n  = Φ('+zb(c2)+') − Φ('+zb(c1)+') = '+fx(beta,4);
   return {
+    story:'You run an alarm test (false-alarm chance α = '+alpha+') of H₀: μ = '+mu0+' against H₁: '+H1+' on '+n+' values with known wobble '+sg+'. If the truth is really '+nz(mu1)+', how likely is the alarm to miss it (Type II error, β) and how likely is it to catch it (power)?',
     text:'A sample of n = '+n+' is drawn from a normal population with known σ = '+sg+'. A level α = '+alpha+' z-test of H₀: μ = '+mu0+' against H₁: '+H1+' is used. If the true mean is '+nz(mu1)+', find the probability of a Type II error and the power.',
     pills:['n = '+n,'σ = '+sg,'α = '+alpha,'true μ = '+nz(mu1)],
     steps:[
@@ -1696,7 +1737,8 @@ function genDuality(){
     var a=rd(L-pick([1,2,3]),1),b=rd(U-pick([0,1,2]),1);
     var inA=a>=L&&a<=U,inB=b>=L&&b<=U;
     return {
-      text:'A '+pc+' confidence interval for μ is ('+fx(L,2)+', '+fx(U,2)+'). Without recomputing anything, decide whether a two-sided test of H₀: μ = '+nz(a)+' and a test of H₀: μ = '+nz(b)+' would reject at α = '+al+'.',
+      story:'A '+pc+' safety net for the average is ('+fx(L,2)+', '+fx(U,2)+'). Without recomputing anything: would a test claiming the average is '+nz(a)+' be rejected at α = '+al+'? And one claiming '+nz(b)+'?',
+    text:'A '+pc+' confidence interval for μ is ('+fx(L,2)+', '+fx(U,2)+'). Without recomputing anything, decide whether a two-sided test of H₀: μ = '+nz(a)+' and a test of H₀: μ = '+nz(b)+' would reject at α = '+al+'.',
       pills:[pc+' CI','α = '+al,'('+fx(L,2)+', '+fx(U,2)+')'],
       steps:[
         S('Test and interval are the same information','A two-sided test at level α rejects H₀: μ = μ₀ exactly when μ₀ falls outside the (1 − α) confidence interval.','CI level '+pc+'  ↔  α = '+al),
@@ -1714,6 +1756,7 @@ function genDuality(){
   var p=pick([0.03,0.04,0.06,0.08,0.12,0.2]),mu0=pick([12,50,100]);
   var rej95=p<=0.05,rej90=p<=0.1;
   return {
+    story:'A test of the claim “the average is '+mu0+'” gives p-value '+p+'. Is '+mu0+' inside the 95% safety net? And inside the 90% one?',
     text:'A two-sided test of H₀: μ = '+mu0+' gives a p-value of '+p+'. Is '+mu0+' inside the 95% confidence interval for μ? Is it inside the 90% interval?',
     pills:['p = '+p,'μ₀ = '+mu0],
     steps:[
@@ -1745,6 +1788,7 @@ function genSetup(){
   var sh=[];
   if(sc.tail==='upper')sh.push({f:f,a:cr,b:lim,color:'bad',alpha:.3,from:3});else if(sc.tail==='lower')sh.push({f:f,a:-lim,b:-cr,color:'bad',alpha:.3,from:3});else{sh.push({f:f,a:cr,b:lim,color:'bad',alpha:.3,from:3});sh.push({f:f,a:-lim,b:-cr,color:'bad',alpha:.3,from:3});}
   return {
+    story:sc.claim+' You take '+n+' measurements, and the true wobble is '+(known?'known':'not known')+'. Set up the test at α = 0.05: what do you compare (hypotheses), which statistic do you use, and which end of the curve means “reject”?',
     text:sc.claim+' A sample of n = '+n+' is taken and the population standard deviation is '+(known?'known':'unknown')+'. Set up the test at α = 0.05: hypotheses, statistic and where the rejection region sits.',
     pills:['n = '+n,'σ '+(known?'known':'unknown'),'α = 0.05'],
     steps:[
@@ -1767,6 +1811,7 @@ function genNormD(){
   var xs=[];for(var i=1;i<=n;i++)xs.push(i);
   var ev=ge?'P(X ≥ '+m+')':'P(X ≤ '+m+')',used=ge?w.slice(m-1):w.slice(0,m);
   return {
+    story:'A spinner lands on 1, 2, …, '+n+'. Its chances follow '+form+', with an unknown constant c. Find c (the chances must add to 1), '+ev+', and the average E(X).',
     text:'A discrete random variable X takes the values 1, 2, …, '+n+' with pmf '+form+'. Find c, '+ev+' and E(X).',
     pills:['x = 1, …, '+n,form],
     steps:[
@@ -1785,6 +1830,7 @@ function genNormC(){
   var xp=a===1?'x':'x²',form='f(x) = c·'+xp+' on [0, '+b+']';
   var f=function(x){return x>=0&&x<=b?c*Math.pow(x,a):0;};
   return {
+    story:'A random amount X follows the curve '+form+' (0 elsewhere) with an unknown scale c. Find c so the total area is 1, the chance that X lands between '+nz(s0)+' and '+nz(t0)+', and the average E(X).',
     text:'A continuous random variable X has pdf '+form+' and is 0 elsewhere. Find c, P('+nz(s0)+' < X < '+nz(t0)+') and E(X).',
     pills:[form,'limits '+nz(s0)+' and '+nz(t0)],
     steps:[
@@ -1824,6 +1870,7 @@ function genCdfD(){
   var pk=rd(Fv(k)-Fv(k-1),2),pab=rd(Fv(b)-Fv(a),2),pc=rd(1-Fv(c-1),2);
   var hl3=[],hl4=[];for(var i=a+1;i<=b;i++)hl3.push(i);for(var j=c;j<=4;j++)hl4.push(j);
   return {
+    story:'The question gives a running-total table (the CDF) for a score X from 0 to 4: each row is the chance of getting that score or less. Read off the chance of exactly '+k+', of more than '+a+' up to '+b+', and of '+c+' or more.',
     text:'A discrete random variable X takes the values 0, 1, 2, 3, 4 and has CDF\nF(x) = 0 for x < 0\n'+[0,1,2,3].map(function(i){return '\u2003\u2003\u2003\u2003 '+fx(F[i],2)+' for '+i+' ≤ x < '+(i+1);}).join('\n')+'\n\u2003\u2003\u2003\u2003 1 for x ≥ 4\nFind P(X = '+k+'), P('+a+' < X ≤ '+b+') and P(X ≥ '+c+').',
     pills:['x = 0, 1, 2, 3, 4'],
     steps:[
@@ -1859,6 +1906,7 @@ function genPdfCdf(){
   for(var i=1;i<=200;i++)ymax=Math.max(ymax,f(x1*i/200));
   if(fam==='exp')ymax=lam;
   return {
+    story:'You are given the running total F (the CDF): '+Ftext+'. Find the density curve f (the slope of F), the chance X lands between '+nz(s0)+' and '+nz(t0)+', and the median (the halfway point).',
     text:'A continuous random variable X has CDF '+Ftext+'. Find the pdf, P('+nz(s0)+' < X < '+nz(t0)+') and the median of X.',
     pills:[fam==='pow'?'F(x) = (x/'+b+')^'+a:'F(x) = 1 − e^(−'+lam+'x)','limits '+nz(s0)+' and '+nz(t0)],
     steps:[
@@ -1947,7 +1995,7 @@ function easyText(s,mid,tid){
 function renderEasyNote(){
   var n=document.getElementById('easyNote'),b=document.getElementById('easyBtn');
   if(b){b.textContent='Simpler words: '+(state.easy?'on':'off');b.setAttribute('aria-pressed',state.easy?'true':'false');}
-  if(n){n.hidden=!state.easy;n.innerHTML=state.easy?'<b>Simpler words.</b> '+H(EASY_NOTE[state.id]||''):'';}
+  if(n){n.hidden=!state.easy;n.innerHTML=state.easy?'<b>Simpler words.</b> '+H((function(t){return t.charAt(0).toUpperCase()+t.slice(1);})((state.q&&state.q.story)||EASY_NOTE[state.id]||'')):'';}
 }
 function initEasy(){
   try{state.easy=localStorage.getItem('stat271-easy')==='1';}catch(e){state.easy=false;}
@@ -2009,6 +2057,7 @@ function showQ(){
   el.text.innerHTML=H(E(q.text));
   el.pills.innerHTML=q.pills.map(function(p){return '<span class="pill">'+H(p)+'</span>';}).join('');
   el.cv.setAttribute('aria-label','Diagram for: '+q.text);
+  renderEasyNote();
   el.steps.innerHTML=q.steps.map(function(st,i){
     return '<div class="step" data-i="'+i+'"><div class="step-n">'+(i+1)+'</div><div class="step-b"><h4>'+H(E(st.t))+'</h4><div class="step-x">'+(st.b?'<p>'+H(E(st.b))+'</p>':'')+(st.f?'<div class="formula">'+H(st.f)+'</div>':'')+(st.a?'<div class="ans '+st.k+'">'+H(st.a)+'</div>':'')+'</div></div></div>';
   }).join('');
