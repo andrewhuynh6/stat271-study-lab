@@ -2591,6 +2591,428 @@ function drawMosaicFig(ctx,W,H,s,C,q){
   T(ctx,'height of the top part = P(H | column)',x0+mx/2,y0+my+40,C.ink3,10.5,'center');
 }
 
+/* ================= helpers for Wk 11-13 ================= */
+function fCDF(x,d1,d2){return x<=0?0:betai(d1/2,d2/2,d1*x/(d1*x+d2));}
+function fPDF(x,d1,d2){if(x<=0)return d1===2?1:0;return Math.exp(lgamma((d1+d2)/2)-lgamma(d1/2)-lgamma(d2/2)+(d1/2)*Math.log(d1/d2)+(d1/2-1)*Math.log(x)-((d1+d2)/2)*Math.log(1+d1*x/d2));}
+function fQ(p,d1,d2){var lo=0,hi=500;for(var i=0;i<90;i++){var m=(lo+hi)/2;if(fCDF(m,d1,d2)<p)lo=m;else hi=m;}return (lo+hi)/2;}
+function tP2(t,df){return 2*(1-tCDF(Math.abs(t),df));}
+function rP(p){return p<0.0001?p.toExponential(2):String(+p.toPrecision(4));}
+function rStar(p){return p<0.001?'***':p<0.01?'**':p<0.05?'*':p<0.1?'.':'';}
+function rN(x,d){return (+x).toFixed(d);}
+function mInv(M){var n=M.length,A=M.map(function(r,i){var o=r.slice();for(var j=0;j<n;j++)o.push(i===j?1:0);return o;}),i,j,k;
+  for(i=0;i<n;i++){var p=i;for(j=i+1;j<n;j++)if(Math.abs(A[j][i])>Math.abs(A[p][i]))p=j;var t=A[i];A[i]=A[p];A[p]=t;var d=A[i][i];for(j=0;j<2*n;j++)A[i][j]/=d;for(k=0;k<n;k++)if(k!==i){var f=A[k][i];for(j=0;j<2*n;j++)A[k][j]-=f*A[i][j];}}
+  return A.map(function(r){return r.slice(n);});}
+function rnorm(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)*1.732;}
+/* ================= MODULE: LINEAR REGRESSION (Wk 11) ================= */
+/* ---------- 1. fit the least squares line ---------- */
+function genRegFit(){
+  var n=6,xs=dSort(dShuf([1,2,3,4,5,6,7,8,9]).slice(0,n)),b0=pick([1,1.5,2,-1,-2]),a0=b0>0?pick([2,4,6]):pick([18,22]),ys=xs.map(function(x){return Math.max(1,Math.round(a0+b0*x+rnd(-3,3)));});
+  var mx=dMean(xs),my=dMean(ys),dx=xs.map(function(x){return x-mx;}),dy=ys.map(function(y){return y-my;}),sxx=sum(dx.map(function(v){return v*v;})),sxy=sum(dx.map(function(v,i){return v*dy[i];}));
+  var b=sxy/sxx,a=my-b*mx,x0=pick([2,3,4,5,6,7].filter(function(v){return xs.indexOf(v)<0;})||[4]),idx=rnd(0,n-1),res=ys[idx]-(a+b*xs[idx]);
+  if(x0===undefined)x0=4.5;
+  var pairs=xs.map(function(x,i){return '('+x+', '+ys[i]+')';}).join(', ');
+  var rows=xs.map(function(x,i){return dPad(x,4)+dPad(ys[i],4)+dPad(fx(dx[i],2),8)+dPad(fx(dy[i],2),8)+dPad(fx(dx[i]*dy[i],2),9)+dPad(fx(dx[i]*dx[i],2),8);}).join('\n');
+  return {
+    story:'You measured two things on '+n+' items: '+pairs+'. Find the straight line ŷ = a + b·x that comes closest to the points (it makes the squared vertical misses as small as possible), use it to predict y when x = '+x0+', and find how far the point ('+xs[idx]+', '+ys[idx]+') sits from the line.',
+    text:'Fit the least-squares line ŷ = a + bx to the data '+pairs+'. Then predict y at x = '+x0+' and compute the residual of the observation ('+xs[idx]+', '+ys[idx]+').',
+    pills:['n = '+n,'predict at x = '+x0],
+    steps:[
+      S('Means','The least-squares line always passes through the point (x̄, ȳ).','x̄ = '+sum(xs)+'/'+n+' = '+fx(mx,3)+'\nȳ = '+sum(ys)+'/'+n+' = '+fx(my,3),'x̄ = '+fx(mx,2)+',  ȳ = '+fx(my,2)),
+      S('Deviations and sums','Write dx = x − x̄ and dy = y − ȳ. Then Sxx = Σdx² and Sxy = Σdx·dy.',dPad('x',4)+dPad('y',4)+dPad('dx',8)+dPad('dy',8)+dPad('dx·dy',9)+dPad('dx²',8)+'\n'+rows+'\n\nSxx = '+fx(sxx,3)+'\nSxy = '+fx(sxy,3)),
+      S('Slope b = Sxy / Sxx','b is the estimated change in the mean of y for a one-unit increase in x.','b = '+fx(sxy,3)+' / '+fx(sxx,3),'b = '+fx(b,4)),
+      S('Intercept a = ȳ − b·x̄','This forces the line through (x̄, ȳ).','a = '+fx(my,3)+' − '+fx(b,4)+' × '+fx(mx,3),'ŷ = '+fx(a,3)+' + '+fx(b,4)+' x'),
+      S('Prediction and residual','A prediction plugs x into the line. A residual is observed − predicted, the vertical distance from the point to the line.','ŷ('+x0+') = '+fx(a,3)+' + '+fx(b,4)+' × '+x0+' = '+fx(a+b*x0,3)+'\nŷ('+xs[idx]+') = '+fx(a+b*xs[idx],3)+'\nresidual = '+ys[idx]+' − '+fx(a+b*xs[idx],3)+' = '+fx(res,3),'Prediction at x = '+x0+': '+fx(a+b*x0,2)+'.  Residual = '+fx(res,2),'good')
+    ],
+    draw:function(ctx,W,H,s,C){drawRegFig(ctx,W,H,s,C,{xs:xs,ys:ys,a:a,b:b,mx:mx,my:my,x0:x0,hi:idx,pred:true,fr:{mean:1,line:4,resid:5,pred:5}});}
+  };
+}
+function drawRegFig(ctx,W,H,s,C,q){
+  var xmin=Math.min.apply(null,q.xs),xmax=Math.max.apply(null,q.xs),ext=q.ext?q.ext:[],all=q.xs.concat(ext.length?[ext[0],ext[ext.length-1]]:[]);
+  var x0=Math.min.apply(null,all)-(xmax-xmin)*0.12,x1=Math.max.apply(null,all)+(xmax-xmin)*0.12;
+  var yl=q.xs.map(function(x,i){return q.ys[i];}).concat([q.a+q.b*x0,q.a+q.b*x1]),y0=Math.min.apply(null,yl),y1=Math.max.apply(null,yl),pad=(y1-y0)*0.12;y0-=pad;y1+=pad;
+  var P=plot(W,H,{x0:x0,x1:x1,y0:y0,y1:y1,l:40,r:16,t:26,b:34});
+  axisX(ctx,P,C,niceTicks(x0,x1,9));niceTicks(y0,y1,5).forEach(function(v){T(ctx,nz(v),P.l-6,P.Y(v)+4,C.ink3,10.5,'right');});
+  ctx.save();ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(P.l,P.t);ctx.lineTo(P.l,P.Y(y0));ctx.stroke();ctx.restore();
+  T(ctx,'y',P.l+8,16,C.ink3,11,'left');
+  if(q.range&&s>=q.fr.range){ctx.fillStyle=C.a('good',0.12);ctx.fillRect(P.X(xmin),P.t,P.X(xmax)-P.X(xmin),P.Y(y0)-P.t);T(ctx,'x values in the data',(P.X(xmin)+P.X(xmax))/2,P.t+12,C.good,10.5,'center',700);}
+  if(s>=q.fr.mean&&!q.nomean){ctx.save();ctx.strokeStyle=C.ink3;ctx.setLineDash([4,3]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(P.X(q.mx),P.t);ctx.lineTo(P.X(q.mx),P.Y(y0));ctx.moveTo(P.l,P.Y(q.my));ctx.lineTo(P.W-P.r,P.Y(q.my));ctx.stroke();ctx.restore();}
+  if(s>=q.fr.line){ctx.save();ctx.strokeStyle=C.accent;ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(P.X(x0),P.Y(q.a+q.b*x0));ctx.lineTo(P.X(x1),P.Y(q.a+q.b*x1));ctx.stroke();ctx.restore();}
+  q.xs.forEach(function(x,i){
+    var y=q.ys[i],yh=q.a+q.b*x,sel=q.hi===i;
+    if(s>=q.fr.resid&&(sel||q.allres)){ctx.save();ctx.strokeStyle=y>=yh?C.good:C.bad;ctx.lineWidth=sel?2.8:1.4;ctx.setLineDash(sel?[]:[3,3]);ctx.beginPath();ctx.moveTo(P.X(x),P.Y(y));ctx.lineTo(P.X(x),P.Y(yh));ctx.stroke();ctx.restore();}
+    ctx.beginPath();ctx.arc(P.X(x),P.Y(y),sel&&s>=q.fr.resid?7.5:5.5,0,7);ctx.fillStyle=C.a('sky',0.55);ctx.fill();ctx.strokeStyle=C.sky;ctx.lineWidth=2;ctx.stroke();
+  });
+  (q.marks||[]).forEach(function(m){if(s>=m.from){var py=q.a+q.b*m.x;ctx.beginPath();ctx.arc(P.X(m.x),P.Y(py),7,0,7);ctx.fillStyle=C.a(m.col,0.7);ctx.fill();ctx.strokeStyle=C[m.col];ctx.lineWidth=2.4;ctx.stroke();ctx.save();ctx.strokeStyle=C[m.col];ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(P.X(m.x),P.Y(py));ctx.lineTo(P.X(m.x),P.Y(y0));ctx.stroke();ctx.restore();T(ctx,m.label,P.X(m.x),P.Y(py)-12,C[m.col],11.5,'center',700);}});
+  if(q.pred&&s>=q.fr.pred){var py=q.a+q.b*q.x0;ctx.beginPath();ctx.arc(P.X(q.x0),P.Y(py),7,0,7);ctx.fillStyle=C.a('warn',0.7);ctx.fill();ctx.strokeStyle=C.warn;ctx.lineWidth=2.4;ctx.stroke();T(ctx,'ŷ('+q.x0+') = '+fx(py,2),P.X(q.x0),P.Y(py)-12,C.warn,11.5,'center',700);}
+}
+/* ---------- 2. read summary(lm): simple regression ---------- */
+function regSim(n,xr,a0,b0,sd,p2){
+  var xs=[],ys=[],i;for(i=0;i<n;i++){xs.push(rnd(xr[0],xr[1]));}
+  for(i=0;i<n;i++)ys.push(Math.round(a0+b0*xs[i]+rnorm()*sd));
+  var mx=dMean(xs),my=dMean(ys),sxx=sum(xs.map(function(x){return (x-mx)*(x-mx);})),sxy=sum(xs.map(function(x,i){return (x-mx)*(ys[i]-my);})),b=sxy/sxx,a=my-b*mx;
+  var sse=sum(ys.map(function(y,i){var r=y-(a+b*xs[i]);return r*r;})),sst=sum(ys.map(function(y){return (y-my)*(y-my);})),df=n-2,rse=Math.sqrt(sse/df),seb=rse/Math.sqrt(sxx),sea=rse*Math.sqrt(1/n+mx*mx/sxx);
+  var rr=1-sse/sst,adj=1-(sse/df)/(sst/(n-1)),tb=b/seb,ta=a/sea,F=tb*tb;
+  return {xs:xs,ys:ys,mx:mx,my:my,sxx:sxx,b:b,a:a,sse:sse,sst:sst,df:df,rse:rse,seb:seb,sea:sea,r2:rr,adj:adj,tb:tb,ta:ta,pb:tP2(tb,df),pa:tP2(ta,df),F:F,pF:1-fCDF(F,1,df),sdy:Math.sqrt(sst/(n-1))};
+}
+function genRegOut(){
+  var n=pick([15,18,20]),f=regSim(n,[10,65],pick([20,40,60,80]),pick([3,5,7]),pick([25,40,60]));
+  var dd=3,nm=['(Intercept)','x'];
+  var out='Coefficients:\n'+dPad('',13)+dPad('Estimate',10)+dPad('Std. Error',12)+dPad('t value',9)+dPad('Pr(>|t|)',11)+'\n'
+   +'(Intercept)  '+dPad(rN(f.a,dd),10)+dPad(rN(f.sea,dd),12)+dPad(rN(f.ta,3),9)+dPad(rP(f.pa),11)+' '+rStar(f.pa)+'\n'
+   +'x            '+dPad(rN(f.b,dd),10)+dPad(rN(f.seb,dd),12)+dPad(rN(f.tb,3),9)+dPad(rP(f.pb),11)+' '+rStar(f.pb)+'\n---\n'
+   +'Residual standard error: '+rN(f.rse,2)+' on '+f.df+' degrees of freedom\nMultiple R-squared: '+rN(f.r2,4)+',  Adjusted R-squared: '+rN(f.adj,4)+'\nF-statistic: '+rN(f.F,2)+' on 1 and '+f.df+' DF,  p-value: '+rP(f.pF);
+  var x0=rnd(25,50),pred=f.a+f.b*x0,sse=f.rse*f.rse*f.df,sig=f.pb<0.05;
+  return {
+    story:'You fitted a straight line to '+n+' points in R and got the output below (shown in the box). Read it: write the line, say what the residual standard error means, rebuild the total unexplained squared distance (SSE), check the R² using the spread of y (sd(y) = '+rN(f.sdy,4)+'), predict y at x = '+x0+', and decide whether x really helps predict y.',
+    text:'A simple linear regression of y on x is fitted to n = '+n+' observations, and summary(lm(y ~ x)) gives the output below (the box shows the coefficient table, residual standard error, R² and F statistic). The sample standard deviation of y is '+rN(f.sdy,4)+'. (a) Write the regression line. (b) What does the residual standard error represent? (c) Calculate SSE. (d) Verify R². (e) Predict y when x = '+x0+'. (f) Is the slope significant at the 5% level?',
+    pills:['n = '+n,'sd(y) = '+rN(f.sdy,4),'predict at x = '+x0],
+    steps:[
+      S('The R output','This is what you are given. The Estimate column holds the fitted coefficients, Std. Error is their uncertainty, and the last column is the p-value of the test H₀: coefficient = 0.',out),
+      S('(a) The regression line','Read the two Estimate values: intercept a and slope b. The standard errors are NOT part of the line.','ŷ = '+rN(f.a,dd)+' + '+rN(f.b,dd)+' x','ŷ = '+rN(f.a,dd)+' + '+rN(f.b,dd)+' x'),
+      S('(b) Residual standard error','It estimates σ, the typical size of the errors: how far observations usually fall from the fitted line, in the units of y. It is s = √(SSE/(n − 2)).','s = '+rN(f.rse,2)+'   (df = n − 2 = '+f.df+')','On average, points fall about '+rN(f.rse,1)+' units of y away from the line.'),
+      S('(c) SSE from the residual standard error','Square s and multiply by its degrees of freedom: s² = SSE/(n − 2).','SSE = s² × df = '+rN(f.rse,2)+'² × '+f.df+'\n    = '+rN(f.rse*f.rse,2)+' × '+f.df,'SSE ≈ '+rN(sse,0)),
+      S('(d) Verify R² = 1 − SSE/SST','SST = (n − 1)·sd(y)², the total variation of y around its mean.','SST = '+(n-1)+' × '+rN(f.sdy,4)+'² = '+rN(f.sst,0)+'\nR² = 1 − '+rN(sse,0)+' / '+rN(f.sst,0)+' = '+rN(1-sse/f.sst,4),'R² ≈ '+rN(f.r2,4)+': about '+rN(f.r2*100,1)+'% of the variation in y is explained by x.'),
+      S('(e) Prediction','Plug x into the fitted line. This is only reliable inside the range of x values used to fit it.','ŷ = '+rN(f.a,dd)+' + '+rN(f.b,dd)+' × '+x0+' = '+rN(pred,2),'ŷ('+x0+') ≈ '+rN(pred,1)),
+      S('(f) Is the slope significant?','Test H₀: β = 0 against Hₐ: β ≠ 0. t = b / SE(b) has n − 2 degrees of freedom. Reject H₀ when p < α = 0.05.','t = '+rN(f.b,dd)+' / '+rN(f.seb,dd)+' = '+rN(f.tb,3)+'\np-value = '+rP(f.pb)+(sig?' < 0.05':' ≥ 0.05'),sig?'Reject H₀: x has a statistically significant linear relationship with y.':'Fail to reject H₀: not enough evidence of a linear relationship.','good')
+    ],
+    draw:function(ctx,W,H,s,C){drawRegFig(ctx,W,H,s,C,{xs:f.xs,ys:f.ys,a:f.a,b:f.b,mx:f.mx,my:f.my,x0:x0,hi:-1,allres:true,nomean:true,pred:true,fr:{mean:99,line:2,resid:4,pred:6}});}
+  };
+}
+/* ---------- 3. prediction, interpolation and extrapolation ---------- */
+function genRegPred(){
+  var ctx_=pick([{x:'price ($)',y:'units ordered',xr:[15,50],a:200,b:-3.2,u:'units'},{x:'hours studied',y:'exam score',xr:[3,24],a:52,b:1.8,u:'points'},{x:'temperature (°C)',y:'yield (%)',xr:[90,190],a:-4.5,b:0.5,u:'percentage points'},{x:'speed (km/h)',y:'fuel use (L/100 km)',xr:[45,155],a:-7,b:0.167,u:'L/100 km'}]);
+  var a=ctx_.a,b=ctx_.b,xr=ctx_.xr,span=xr[1]-xr[0],xin=Math.round(xr[0]+span*pick([0.3,0.5,0.7])),xout=Math.round(xr[0]-span*pick([0.35,0.45])),n=8,xs=[],ys=[],i;
+  for(i=0;i<n;i++){var x=xr[0]+span*i/(n-1);xs.push(x);ys.push(a+b*x+rnorm()*Math.abs(b)*span*0.05);}
+  var xp=xs[3],yp=ys[3],res=yp-(a+b*xp),pin=a+b*xin,pout=a+b*xout;
+  return {
+    story:'A line ŷ = '+a+(b<0?' − ':' + ')+Math.abs(b)+' x was fitted to data where '+ctx_.x+' ranged from '+xr[0]+' to '+xr[1]+'. Use it to predict '+ctx_.y+' at '+xin+' and at '+xout+', say which prediction you trust more, and find the residual of one observed point.',
+    text:'A regression of '+ctx_.y+' on '+ctx_.x+' gives ŷ = '+a+(b<0?' − ':' + ')+Math.abs(b)+'x, fitted to observations with x between '+xr[0]+' and '+xr[1]+'. (a) Predict y at x = '+xin+'. (b) Predict y at x = '+xout+' and comment. (c) For an observed point (x, y) = ('+rN(xp,1)+', '+rN(yp,1)+') find the residual and interpret the slope.',
+    pills:['x from '+xr[0]+' to '+xr[1],'a = '+a,'b = '+b],
+    steps:[
+      S('Interpret the slope','b is the estimated change in the MEAN of y for a one-unit increase in x. The intercept a is the predicted y at x = 0, which only makes sense if x = 0 is realistic.','b = '+b,'Each extra unit of '+ctx_.x+' goes with a change of about '+b+' '+ctx_.u+' in '+ctx_.y+'.'),
+      S('Prediction inside the data range','x = '+xin+' lies between '+xr[0]+' and '+xr[1]+', so this is interpolation. It is reasonably reliable.','ŷ('+xin+') = '+a+(b<0?' − ':' + ')+Math.abs(b)+' × '+xin+'\n      = '+rN(pin,2),'ŷ('+xin+') = '+rN(pin,2)),
+      S('Prediction outside the data range','x = '+xout+' is below the smallest observed x ('+xr[0]+'), so this is extrapolation. The line is only known to fit INSIDE the data. Outside it the relationship may not stay straight.','ŷ('+xout+') = '+a+(b<0?' − ':' + ')+Math.abs(b)+' × '+xout+'\n      = '+rN(pout,2),'ŷ('+xout+') = '+rN(pout,2)+(pout<0?'. This is impossible for '+ctx_.y+', a sign that extrapolation fails.':'. Treat with caution: extrapolation.')),
+      S('Residual of an observed point','residual = observed − predicted. Positive means the point lies ABOVE the line.','ŷ('+rN(xp,1)+') = '+rN(a+b*xp,2)+'\nresidual = '+rN(yp,1)+' − '+rN(a+b*xp,2)+' = '+rN(res,2),'Residual = '+rN(res,2)+(res>=0?' (above the line)':' (below the line)'),'good')
+    ],
+    draw:function(ctx,W,H,s,C){drawRegFig(ctx,W,H,s,C,{xs:xs,ys:ys,a:a,b:b,mx:0,my:0,x0:xin,hi:3,ext:[xout,xr[1]],range:true,nomean:true,marks:[{x:xin,col:'good',label:'in range',from:2},{x:xout,col:'bad',label:'extrapolation',from:3}],fr:{mean:99,line:1,resid:4,pred:99,range:1}});}
+  };
+}
+/* ---------- 4. R squared and adjusted R squared ---------- */
+function genR2(){
+  var n=pick([15,20,25,30]),SST=pick([2000,4000,6000,8000]),r1=rnd(55,75)/100,k1=1,k2=pick([3,4]),r2=Math.min(0.97,r1+rnd(1,4)/100);
+  var sse1=Math.round(SST*(1-r1)),sse2=Math.round(SST*(1-r2)),R1=1-sse1/SST,R2=1-sse2/SST,A1=1-(sse1/(n-k1-1))/(SST/(n-1)),A2=1-(sse2/(n-k2-1))/(SST/(n-1));
+  var better=A1>A2?'Model A':'Model B';
+  return {
+    story:'Two regression models predict the same y from '+n+' observations. The total variation in y is SST = '+SST+'. Model A uses '+k1+' predictor and leaves SSE = '+sse1+' unexplained. Model B uses '+k2+' predictors and leaves SSE = '+sse2+'. Work out what share of the variation each one explains, correct for the number of predictors, and say which model you would prefer.',
+    text:'Model A (k = '+k1+' predictor) and Model B (k = '+k2+' predictors) are fitted to the same n = '+n+' observations. SST = '+SST+', SSE(A) = '+sse1+' and SSE(B) = '+sse2+'. Compute R² and adjusted R² for each model and decide which model is preferable.',
+    pills:['n = '+n,'SST = '+SST,'SSE(A) = '+sse1,'SSE(B) = '+sse2,'k(A) = '+k1,'k(B) = '+k2],
+    steps:[
+      S('Split the total variation','SST = SSR + SSE: explained variation plus unexplained variation. SSR = SST − SSE.','Model A: SSR = '+SST+' − '+sse1+' = '+(SST-sse1)+'\nModel B: SSR = '+SST+' − '+sse2+' = '+(SST-sse2)),
+      S('R² = 1 − SSE/SST','The proportion of the variation in y explained by the model. Adding predictors can NEVER make R² smaller.','R²(A) = 1 − '+sse1+'/'+SST+' = '+fx(R1,4)+'\nR²(B) = 1 − '+sse2+'/'+SST+' = '+fx(R2,4),'R²(A) = '+fx(R1,3)+',  R²(B) = '+fx(R2,3)),
+      S('Adjusted R² = 1 − [SSE/(n − k − 1)] / [SST/(n − 1)]','Adjusted R² divides each sum of squares by its degrees of freedom, which penalizes extra predictors.','Model A: df = '+n+' − '+k1+' − 1 = '+(n-k1-1)+'\n  R²adj = 1 − ('+sse1+'/'+(n-k1-1)+') / ('+SST+'/'+(n-1)+') = '+fx(A1,4)+'\nModel B: df = '+n+' − '+k2+' − 1 = '+(n-k2-1)+'\n  R²adj = 1 − ('+sse2+'/'+(n-k2-1)+') / ('+SST+'/'+(n-1)+') = '+fx(A2,4),'R²adj(A) = '+fx(A1,3)+',  R²adj(B) = '+fx(A2,3)),
+      S('Choose the model','Use R² to describe explained variation and adjusted R² to compare models with different numbers of predictors. A higher adjusted R² means the extra predictors pay for themselves.','R²(B) '+(R2>R1?'>':'≤')+' R²(A), but R²adj(A) = '+fx(A1,4)+' vs R²adj(B) = '+fx(A2,4),better+' is preferable (higher adjusted R²).','good')
+    ],
+    draw:function(ctx,W,H,s,C){drawR2Fig(ctx,W,H,s,C,{SST:SST,sse:[sse1,sse2],R:[R1,R2],A:[A1,A2],k:[k1,k2]});}
+  };
+}
+function drawR2Fig(ctx,W,H,s,C,q){
+  var x0=70,x1=W-24,bh=Math.min(40,H*0.18),ys=[H*0.3,H*0.62],i;
+  T(ctx,'total variation SST (full bar)',x0,18,C.ink3,11,'left');
+  for(i=0;i<2;i++){
+    var wssr=(x1-x0)*(1-q.sse[i]/q.SST),y=ys[i];
+    T(ctx,i?'Model B':'Model A',x0-8,y+5,C.ink,12.5,'right',700);
+    ctx.fillStyle=C.a('good',0.4);ctx.fillRect(x0,y-bh/2,wssr,bh);ctx.strokeStyle=C.good;ctx.lineWidth=2;ctx.strokeRect(x0,y-bh/2,wssr,bh);
+    ctx.fillStyle=C.a('bad',0.3);ctx.fillRect(x0+wssr,y-bh/2,x1-x0-wssr,bh);ctx.strokeStyle=C.bad;ctx.strokeRect(x0+wssr,y-bh/2,x1-x0-wssr,bh);
+    if(s>=1){T(ctx,'SSR '+(q.SST-q.sse[i]),x0+wssr/2,y+4,C.ink,11.5,'center',700);T(ctx,'SSE '+q.sse[i],x0+wssr+(x1-x0-wssr)/2,y+4,C.ink,11.5,'center',700);}
+    if(s>=2)T(ctx,'R² = '+fx(q.R[i],3),x0+wssr/2,y-bh/2-6,C.good,12,'center',700);
+    if(s>=3){var ax=x0+(x1-x0)*q.A[i];ctx.save();ctx.strokeStyle=C.warn;ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(ax,y-bh/2-4);ctx.lineTo(ax,y+bh/2+4);ctx.stroke();ctx.restore();T(ctx,'adj '+fx(q.A[i],3)+' (k = '+q.k[i]+')',ax,y+bh/2+17,C.warn,11.5,'center',700);}
+  }
+}
+/* ---------- 5. multiple regression output ---------- */
+function mlrSim(n){
+  var xs1=[],xs2=[],ys=[],i,b1=pick([3,5,7]),b2=pick([0,0,0.5,1.5,-2,4]),a0=pick([20,60,100]),sd=pick([15,25,40]);
+  for(i=0;i<n;i++){var u=rnd(10,60);xs1.push(u);xs2.push(Math.round(25+0.3*(u-30)+rnorm()*8));}
+  for(i=0;i<n;i++)ys.push(Math.round(a0+b1*xs1[i]+b2*xs2[i]+rnorm()*sd));
+  var X=xs1.map(function(v,j){return [1,v,xs2[j]];}),XtX=[[0,0,0],[0,0,0],[0,0,0]],Xty=[0,0,0],p,q,j;
+  for(j=0;j<n;j++)for(p=0;p<3;p++){Xty[p]+=X[j][p]*ys[j];for(q=0;q<3;q++)XtX[p][q]+=X[j][p]*X[j][q];}
+  var inv=mInv(XtX),B=[0,0,0];for(p=0;p<3;p++)for(q=0;q<3;q++)B[p]+=inv[p][q]*Xty[q];
+  var my=dMean(ys),sse=0,sst=0;for(j=0;j<n;j++){var yh=B[0]+B[1]*xs1[j]+B[2]*xs2[j];sse+=(ys[j]-yh)*(ys[j]-yh);sst+=(ys[j]-my)*(ys[j]-my);}
+  var df=n-3,rse=Math.sqrt(sse/df),se=[0,1,2].map(function(i){return rse*Math.sqrt(inv[i][i]);}),t=B.map(function(b,i){return b/se[i];}),pv=t.map(function(v){return tP2(v,df);});
+  var r2=1-sse/sst,adj=1-(sse/df)/(sst/(n-1)),F=((sst-sse)/2)/(sse/df);
+  return {xs1:xs1,xs2:xs2,ys:ys,B:B,se:se,t:t,p:pv,df:df,rse:rse,r2:r2,adj:adj,F:F,pF:1-fCDF(F,2,df),n:n};
+}
+function genMlr(){
+  var n=pick([15,18,20]),f=mlrSim(n),dd=3,x10=rnd(25,45),x20=rnd(15,35),pred=f.B[0]+f.B[1]*x10+f.B[2]*x20,names=['(Intercept)','x1','x2'];
+  var out='Coefficients:\n'+dPad('',13)+dPad('Estimate',10)+dPad('Std. Error',12)+dPad('t value',9)+dPad('Pr(>|t|)',11)+'\n'
+    +names.map(function(nm,i){return (nm+'            ').slice(0,13)+dPad(rN(f.B[i],dd),10)+dPad(rN(f.se[i],dd),12)+dPad(rN(f.t[i],3),9)+dPad(rP(f.p[i]),11)+' '+rStar(f.p[i]);}).join('\n')
+    +'\n---\nResidual standard error: '+rN(f.rse,2)+' on '+f.df+' degrees of freedom\nMultiple R-squared: '+rN(f.r2,4)+',  Adjusted R-squared: '+rN(f.adj,4)+'\nF-statistic: '+rN(f.F,2)+' on 2 and '+f.df+' DF,  p-value: '+rP(f.pF);
+  var s1=f.p[1]<0.05,s2=f.p[2]<0.05,sigTxt=s1&&s2?'Both x1 and x2 are significant at 5%.':s1?'Only x1 is significant at 5%. x2 is not.':s2?'Only x2 is significant at 5%. x1 is not.':'Neither x1 nor x2 is significant at 5%.';
+  return {
+    story:'You predicted y from two measurements, x1 and x2, using '+n+' observations. The R output is in the box. Write the prediction rule, say what each slope means when the other measurement is held fixed, check which of x1 and x2 really help (p < 0.05), count the leftover degrees of freedom, and predict y at x1 = '+x10+', x2 = '+x20+'.',
+    text:'A multiple regression of y on x1 and x2 is fitted to n = '+n+' observations. summary(lm(y ~ x1 + x2)) gives the output below. (a) Write the regression equation. (b) Interpret the coefficient of x1. (c) Which predictors are significant at the 5% level? (d) How many residual degrees of freedom are there and why? (e) Predict y at x1 = '+x10+' and x2 = '+x20+'.',
+    pills:['n = '+n,'x1 = '+x10,'x2 = '+x20],
+    steps:[
+      S('The R output','Each row is one coefficient. The p-value tests H₀: that coefficient = 0 while the other predictor stays in the model.',out),
+      S('(a) The equation','Take the Estimate column: intercept, then the coefficient of each predictor.','ŷ = '+rN(f.B[0],dd)+(f.B[1]<0?' − ':' + ')+rN(Math.abs(f.B[1]),dd)+' x1'+(f.B[2]<0?' − ':' + ')+rN(Math.abs(f.B[2]),dd)+' x2','ŷ = '+rN(f.B[0],dd)+(f.B[1]<0?' − ':' + ')+rN(Math.abs(f.B[1]),dd)+' x1'+(f.B[2]<0?' − ':' + ')+rN(Math.abs(f.B[2]),dd)+' x2'),
+      S('(b) Interpret a slope','Key phrase for multiple regression: HOLDING THE OTHER PREDICTORS FIXED. Each coefficient is a partial relationship.','b1 = '+rN(f.B[1],dd),'Holding x2 fixed, one more unit of x1 goes with an estimated '+(f.B[1]>=0?'increase':'decrease')+' of '+rN(Math.abs(f.B[1]),2)+' in y.'),
+      S('(c) Which predictors matter?','Compare each p-value with 0.05. A small p-value is evidence that the coefficient is not 0.','x1: p = '+rP(f.p[1])+(s1?' < 0.05':' ≥ 0.05')+'\nx2: p = '+rP(f.p[2])+(s2?' < 0.05':' ≥ 0.05'),sigTxt),
+      S('(d) Residual degrees of freedom','We estimate k + 1 = 3 coefficients (two slopes and the intercept), so the residual df is n − k − 1.','df = n − k − 1 = '+n+' − 2 − 1 = '+f.df,'df = '+f.df),
+      S('(e) Prediction','Plug both values into the fitted equation.','ŷ = '+rN(f.B[0],dd)+(f.B[1]<0?' − ':' + ')+rN(Math.abs(f.B[1]),dd)+' × '+x10+(f.B[2]<0?' − ':' + ')+rN(Math.abs(f.B[2]),dd)+' × '+x20+'\n  = '+rN(pred,2),'ŷ = '+rN(pred,1),'good')
+    ],
+    draw:function(ctx,W,H,s,C){drawTcoefFig(ctx,W,H,s,C,{t:f.t,p:f.p,df:f.df,names:['intercept','x1','x2']});}
+  };
+}
+function drawTcoefFig(ctx,W,H,s,C,q){
+  var tc=tq(0.975,q.df),m=Math.max(tc*1.4,Math.max.apply(null,q.t.map(Math.abs))*1.15),x0=70,x1=W-24,cx=(x0+x1)/2,P=function(v){return cx+v/m*(x1-x0)/2;},rowH=Math.min(44,(H-70)/3),i;
+  T(ctx,'t value of each coefficient: t = estimate / standard error',W/2,16,C.ink3,11,'center');
+  if(s>=4){[-tc,tc].forEach(function(v){ctx.save();ctx.strokeStyle=C.bad;ctx.setLineDash([5,3]);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(P(v),30);ctx.lineTo(P(v),H-30);ctx.stroke();ctx.restore();});T(ctx,'±'+fx(tc,2)+' (5% cutoff)',P(tc),H-14,C.bad,10.5,'center',700);}
+  ctx.save();ctx.strokeStyle=C.ink3;ctx.beginPath();ctx.moveTo(cx,28);ctx.lineTo(cx,H-34);ctx.stroke();ctx.restore();
+  for(i=0;i<3;i++){
+    var y=46+i*rowH+rowH/2-6,sig=q.p[i]<0.05;
+    T(ctx,q.names[i],x0-8,y+5,C.ink,12,'right',700);
+    if(s>=1){ctx.fillStyle=C.a(s>=4&&sig?'good':'sky',0.45);ctx.fillRect(Math.min(cx,P(q.t[i])),y-rowH*0.28,Math.abs(P(q.t[i])-cx),rowH*0.56);ctx.strokeStyle=s>=4&&sig?C.good:C.sky;ctx.lineWidth=2;ctx.strokeRect(Math.min(cx,P(q.t[i])),y-rowH*0.28,Math.abs(P(q.t[i])-cx),rowH*0.56);
+      T(ctx,'t = '+fx(q.t[i],2),P(q.t[i])+(q.t[i]>=0?6:-6),y+4,C.ink,11.5,q.t[i]>=0?'left':'right',700);}
+    if(s>=4)T(ctx,sig?'significant':'not significant',x1,y+4,sig?C.good:C.ink3,11,'right',700);
+  }
+}
+
+/* ================= MODULE: ANOVA (Wk 12) ================= */
+var AOV_NAMES=['A','B','C','D'];
+function aovBuild(groups,ns,means,sds){
+  var k=ns.length,N=sum(ns),gm=sum(ns.map(function(n,i){return n*means[i];}))/N,i;
+  var ssb=sum(ns.map(function(n,j){return n*Math.pow(means[j]-gm,2);})),ssw=sum(ns.map(function(n,j){return (n-1)*sds[j]*sds[j];}));
+  var d1=k-1,d2=N-k,msb=ssb/d1,msw=ssw/d2,F=msb/msw,p=1-fCDF(F,d1,d2),fc=fQ(0.95,d1,d2);
+  return {k:k,N:N,ns:ns,means:means,sds:sds,gm:gm,ssb:ssb,ssw:ssw,sst:ssb+ssw,d1:d1,d2:d2,msb:msb,msw:msw,F:F,p:p,fc:fc,groups:groups};
+}
+function aovGen(unequal,kind){
+  var k=pick([3,3,4]),ns=[],i,j;
+  for(i=0;i<k;i++)ns.push(unequal?pick([3,4,5,6]):4);
+  if(unequal&&ns.every(function(v){return v===ns[0];}))ns[0]=ns[0]===3?5:3;
+  var m0=rnd(20,50),diff=Math.random()<0.6,sd=pick([2,3,4]),groups=[];
+  for(i=0;i<k;i++){var eff=diff?pick([-9,-6,-3,0,4,8]):pick([-1,0,1]),g=[];for(j=0;j<ns[i];j++)g.push(Math.max(1,Math.round(m0+eff+rnorm()*sd)));groups.push(g);}
+  var means=groups.map(dMean),sds=groups.map(function(g,i){return Math.sqrt(sum(g.map(function(v){return (v-means[i])*(v-means[i]);}))/(g.length-1));});
+  var A=aovBuild(groups,ns,means,sds);A.ssw=sum(groups.map(function(g,i){return sum(g.map(function(v){return (v-means[i])*(v-means[i]);}));}));A.msw=A.ssw/A.d2;A.F=A.msb/A.msw;A.p=1-fCDF(A.F,A.d1,A.d2);A.sst=A.ssb+A.ssw;
+  return A;
+}
+function aovTable(A){
+  return dPad('Source',10)+dPad('df',5)+dPad('SS',10)+dPad('MS',10)+dPad('F',8)+'\n'+dPad('Between',10)+dPad(A.d1,5)+dPad(fx(A.ssb,2),10)+dPad(fx(A.msb,2),10)+dPad(fx(A.F,3),8)+'\n'+dPad('Within',10)+dPad(A.d2,5)+dPad(fx(A.ssw,2),10)+dPad(fx(A.msw,2),10)+'\n'+dPad('Total',10)+dPad(A.N-1,5)+dPad(fx(A.sst,2),10);
+}
+function aovDecision(A){
+  var rej=A.p<0.05;
+  return {txt:'F = '+fx(A.F,3)+' on ('+A.d1+', '+A.d2+') df\np-value = P(F ≥ '+fx(A.F,3)+') = '+rP(A.p)+'\n5% critical value F* = '+fx(A.fc,3)+'\n'+(rej?'F > F* and p < 0.05':'F < F* and p > 0.05'),ans:rej?'Reject H₀: there is evidence that the population means are not all equal. (ANOVA does not say WHICH groups differ.)':'Fail to reject H₀: not enough evidence that the population means differ.',rej:rej};
+}
+function genAovRaw(){return aovRawBuild(false);}
+function genAovUneq(){return aovRawBuild(true);}
+function aovRawBuild(unequal){
+  var A=aovGen(unequal),k=A.k,dec=aovDecision(A),i;
+  var list=A.groups.map(function(g,j){return 'Group '+AOV_NAMES[j]+': '+g.join(', ');}).join('\n');
+  var gmTxt='x̄.. = ('+A.ns.map(function(n,j){return n+'×'+fx(A.means[j],2);}).join(' + ')+') / '+A.N+' = '+fx(A.gm,3);
+  return {
+    story:'Compare '+k+' groups of numbers: '+A.groups.map(function(g,j){return AOV_NAMES[j]+' ('+g.join(', ')+')';}).join('; ')+'. Are the group averages different by more than you would expect from the ordinary scatter inside each group? One overall test (ANOVA) answers that: compare how far the group averages sit from the overall average (between) with how scattered the numbers are inside each group (within).',
+    text:'Test at α = 0.05 whether the '+k+' population means are equal, given independent random samples. '+list.split('\n').join('; ')+'. Compute SSB, SSW, the ANOVA table, the F statistic and give a conclusion.',
+    pills:['k = '+k+' groups','N = '+A.N,'sizes '+A.ns.join(', ')],
+    steps:[
+      S('State the hypotheses','H₀ says all population means are equal. Hₐ says at least ONE differs (not that every mean is different). Assumptions: independent samples, roughly normal groups, a common variance.','H₀: μ_A = μ_B'+(k>2?' = μ_C':'')+(k>3?' = μ_D':'')+'\nHₐ: not all means are equal\nk = '+k+' groups, sizes '+A.ns.join(', ')+', N = '+A.N),
+      S('Group means and the grand mean','The grand mean is the mean of ALL N values, i.e. the mean of the group means weighted by group size.',A.groups.map(function(g,j){return 'x̄_'+AOV_NAMES[j]+' = '+g.join('+')+' over '+g.length+' = '+fx(A.means[j],2);}).join('\n')+'\n'+gmTxt),
+      S('Between-group sum of squares SSB','SSB = Σ nᵢ (x̄ᵢ − x̄..)². It measures how far the group means sit from the grand mean. Larger groups count more.',A.ns.map(function(n,j){return n+' × ('+fx(A.means[j],2)+' − '+fx(A.gm,2)+')² = '+fx(n*Math.pow(A.means[j]-A.gm,2),3);}).join('\n')+'\nSSB = '+fx(A.ssb,3),'SSB = '+fx(A.ssb,2)),
+      S('Within-group sum of squares SSW','SSW = Σ Σ (x − x̄ᵢ)². It measures scatter of the values around THEIR OWN group mean. It is the same as Σ (nᵢ − 1) sᵢ².',A.groups.map(function(g,j){return 'Group '+AOV_NAMES[j]+': '+fx(sum(g.map(function(v){return (v-A.means[j])*(v-A.means[j]);})),3);}).join('\n')+'\nSSW = '+fx(A.ssw,3),'SSW = '+fx(A.ssw,2)),
+      S('ANOVA table and F statistic','Divide each sum of squares by its degrees of freedom: MSB = SSB/(k − 1), MSW = SSW/(N − k). F = MSB/MSW compares between-group variation with within-group variation. Check SST = SSB + SSW and the df add up.',aovTable(A)+'\n\nF = '+fx(A.msb,2)+' / '+fx(A.msw,2)+' = '+fx(A.F,3),'F = '+fx(A.F,3)),
+      S('Decision','The F test is always upper-tailed: large F means the group means are too far apart to be explained by within-group scatter. Under H₀, F follows F(k − 1, N − k).',dec.txt,dec.ans,dec.rej?'bad':'warn')
+    ],
+    draw:function(ctx,W,H,s,C){drawAnovaFig(ctx,W,H,s,C,{mode:'groups',A:A,fr:{groups:1,means:2,between:3,within:4,fcurve:5,tail:6}});}
+  };
+}
+function genAovSum(){
+  var k=pick([3,3,4]),ns=[],means=[],sds=[],i,m0=rnd(15,45),sd0=pick([2,3,4]),diff=Math.random()<0.55;
+  for(i=0;i<k;i++){ns.push(pick([8,10,12,15]));means.push(m0+(diff?pick([-8,-4,0,5,9]):pick([-1,0,1])));sds.push(sd0+pick([-1,0,0,1]));}
+  var A=aovBuild(null,ns,means,sds),dec=aovDecision(A),nm=function(j){return AOV_NAMES[j];};
+  var gmTxt='x̄.. = ('+ns.map(function(n,j){return n+'×'+means[j];}).join(' + ')+') / '+A.N+' = '+fx(A.gm,3);
+  return {
+    story:'You only have summaries for '+k+' groups: '+ns.map(function(n,j){return nm(j)+' has '+n+' values, average '+means[j]+' and spread (SD) '+sds[j];}).join('; ')+'. Use them to run the one overall test of whether the group averages differ.',
+    text:'Independent random samples from '+k+' normal populations with a common variance give: '+ns.map(function(n,j){return 'Group '+nm(j)+': n = '+n+', x̄ = '+means[j]+', s = '+sds[j];}).join('; ')+'. Test H₀: all means equal at the 5% level.',
+    pills:ns.map(function(n,j){return nm(j)+': n = '+n+', x̄ = '+means[j]+', s = '+sds[j];}),
+    steps:[
+      S('Hypotheses and sizes','Only summaries are needed, since SSW = Σ (nᵢ − 1)sᵢ² and SSB = Σ nᵢ(x̄ᵢ − x̄..)².','H₀: all '+k+' population means are equal\nHₐ: not all equal\nk = '+k+',  N = '+ns.join(' + ')+' = '+A.N),
+      S('Grand mean','Weight each group mean by its sample size.',gmTxt,'x̄.. = '+fx(A.gm,3)),
+      S('SSB','How far each group mean is from the grand mean, weighted by group size.',ns.map(function(n,j){return n+' × ('+means[j]+' − '+fx(A.gm,2)+')² = '+fx(n*Math.pow(means[j]-A.gm,2),3);}).join('\n')+'\nSSB = '+fx(A.ssb,3),'SSB = '+fx(A.ssb,2)),
+      S('SSW from the sample variances','Each group contributes (nᵢ − 1)sᵢ².',ns.map(function(n,j){return '('+n+' − 1) × '+sds[j]+'² = '+fx((n-1)*sds[j]*sds[j],2);}).join('\n')+'\nSSW = '+fx(A.ssw,2),'SSW = '+fx(A.ssw,2)),
+      S('ANOVA table and F','MSB = SSB/(k − 1), MSW = SSW/(N − k), F = MSB/MSW.',aovTable(A),'F = '+fx(A.F,3)),
+      S('Decision',"Compare F with the F(k − 1, N − k) distribution (upper tail only).",dec.txt,dec.ans,dec.rej?'bad':'warn')
+    ],
+    draw:function(ctx,W,H,s,C){drawAnovaFig(ctx,W,H,s,C,{mode:'sum',A:A,fr:{groups:1,means:2,between:3,within:4,fcurve:5,tail:6}});}
+  };
+}
+function genAovTbl(){
+  var k=pick([3,4,5]),n=pick([4,5,6,8]),N=k*n,msw=rnd(10,60)/10,F=pick([0.6,1.3,1.8,3.4,5.2,8.1]),d1=k-1,d2=N-k,ssw=rd(msw*d2,1),ssb=rd(F*msw*d1,1);
+  var A={k:k,N:N,ns:[],d1:d1,d2:d2,ssb:ssb,ssw:ssw,sst:ssb+ssw,msb:ssb/d1,msw:ssw/d2};A.F=A.msb/A.msw;A.p=1-fCDF(A.F,d1,d2);A.fc=fQ(0.95,d1,d2);var dec=aovDecision(A);
+  return {
+    story:'You compare '+k+' groups with '+n+' values each. Someone gives you only two numbers: the between-group sum of squares SSB = '+ssb+' and the within-group sum of squares SSW = '+ssw+'. Fill in the rest of the ANOVA table (degrees of freedom, mean squares, F) and decide.',
+    text:'A one-way ANOVA compares k = '+k+' groups with n = '+n+' observations each (N = '+N+'). SSB = '+ssb+' and SSW = '+ssw+'. Complete the ANOVA table, find F and conclude at α = 0.05.',
+    pills:['k = '+k,'n = '+n,'N = '+N,'SSB = '+ssb,'SSW = '+ssw],
+    steps:[
+      S('Degrees of freedom','Between: k − 1. Within: N − k. Total: N − 1. They must add up.','Between: '+k+' − 1 = '+d1+'\nWithin: '+N+' − '+k+' = '+d2+'\nTotal: '+N+' − 1 = '+(N-1)+'   ('+d1+' + '+d2+' = '+(N-1)+' ✓)'),
+      S('Sums of squares','SST = SSB + SSW.','SST = '+ssb+' + '+ssw+' = '+fx(ssb+ssw,1),'SST = '+fx(ssb+ssw,1)),
+      S('Mean squares','Divide each sum of squares by its degrees of freedom.','MSB = '+ssb+' / '+d1+' = '+fx(A.msb,3)+'\nMSW = '+ssw+' / '+d2+' = '+fx(A.msw,3)),
+      S('F statistic and the table','F = MSB / MSW.',aovTable(A),'F = '+fx(A.F,3)),
+      S('Decision','Large F means the group means are far apart relative to within-group scatter. Use the upper tail of F(k − 1, N − k).',dec.txt,dec.ans,dec.rej?'bad':'warn')
+    ],
+    draw:function(ctx,W,H,s,C){drawAnovaFig(ctx,W,H,s,C,{mode:'table',A:A,fr:{bar:1,df:2,ms:3,fcurve:4,tail:5}});}
+  };
+}
+function drawAnovaFig(ctx,W,H,s,C,q){
+  var A=q.A,two=W>=560,gw=two?W*0.56:W,i,j;
+  if(q.mode==='table'){
+    var bx0=24,bx1=two?W*0.5:W-24,by=H*0.45,bh=Math.min(44,H*0.2),wb=(bx1-bx0)*A.ssb/A.sst;
+    if(s>=1){ctx.fillStyle=C.a('good',0.4);ctx.fillRect(bx0,by-bh/2,wb,bh);ctx.strokeStyle=C.good;ctx.lineWidth=2;ctx.strokeRect(bx0,by-bh/2,wb,bh);ctx.fillStyle=C.a('bad',0.3);ctx.fillRect(bx0+wb,by-bh/2,bx1-bx0-wb,bh);ctx.strokeStyle=C.bad;ctx.strokeRect(bx0+wb,by-bh/2,bx1-bx0-wb,bh);
+      T(ctx,'SSB '+fx(A.ssb,1),bx0+wb/2,by+4,C.ink,11.5,'center',700);T(ctx,'SSW '+fx(A.ssw,1),bx0+wb+(bx1-bx0-wb)/2,by+4,C.ink,11.5,'center',700);T(ctx,'SST = SSB + SSW = '+fx(A.sst,1),(bx0+bx1)/2,by-bh/2-10,C.ink3,11.5,'center',700);}
+    if(s>=2){T(ctx,'df = '+A.d1,bx0+wb/2,by+bh/2+18,C.good,11.5,'center',700);T(ctx,'df = '+A.d2,bx0+wb+(bx1-bx0-wb)/2,by+bh/2+18,C.bad,11.5,'center',700);}
+    if(s>=3){T(ctx,'MSB = '+fx(A.msb,2),bx0+wb/2,by+bh/2+36,C.good,11.5,'center',700);T(ctx,'MSW = '+fx(A.msw,2),bx0+wb+(bx1-bx0-wb)/2,by+bh/2+36,C.bad,11.5,'center',700);}
+  } else {
+    var k=A.k,vals=[];if(q.mode==='groups')A.groups.forEach(function(g){g.forEach(function(v){vals.push(v);});});else A.means.forEach(function(m,i){vals.push(m-A.sds[i]*1.1,m+A.sds[i]*1.1);});
+    var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals),pd=(hi-lo)*0.18+1,P=plot(gw,H,{x0:0.4,x1:k+0.6,y0:lo-pd,y1:hi+pd,l:34,r:10,t:24,b:30});
+    niceTicks(lo-pd,hi+pd,5).forEach(function(v){T(ctx,nz(v),P.l-5,P.Y(v)+4,C.ink3,10.5,'right');});
+    ctx.save();ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(P.l,P.t);ctx.lineTo(P.l,P.Y(lo-pd));ctx.lineTo(P.W-P.r,P.Y(lo-pd));ctx.stroke();ctx.restore();
+    if(s>=q.fr.means){ctx.save();ctx.strokeStyle=C.ink;ctx.setLineDash([6,3]);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(P.l,P.Y(A.gm));ctx.lineTo(P.W-P.r,P.Y(A.gm));ctx.stroke();ctx.restore();T(ctx,'grand mean '+fx(A.gm,1),P.W-P.r,P.Y(A.gm)-5,C.ink,10.5,'right',700);}
+    for(i=0;i<k;i++){
+      var gx=P.X(i+1),nm=D_COL[i%5],mean=A.means[i];
+      T(ctx,AOV_NAMES[i],gx,P.Y(lo-pd)+16,C.ink,12,'center',700);
+      if(q.mode==='groups'){
+        A.groups[i].forEach(function(v,t){var jx=gx+(t-(A.groups[i].length-1)/2)*Math.min(14,(P.pw/k)/(A.groups[i].length+1));
+          if(s>=q.fr.within){ctx.save();ctx.strokeStyle=C.a('bad',0.7);ctx.setLineDash([2,3]);ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(jx,P.Y(v));ctx.lineTo(jx,P.Y(mean));ctx.stroke();ctx.restore();}
+          ctx.beginPath();ctx.arc(jx,P.Y(v),5,0,7);ctx.fillStyle=C.a(nm,0.55);ctx.fill();ctx.strokeStyle=C[nm];ctx.lineWidth=1.8;ctx.stroke();});
+      } else if(s>=q.fr.groups){
+        ctx.save();ctx.strokeStyle=C[nm];ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(gx,P.Y(mean-A.sds[i]));ctx.lineTo(gx,P.Y(mean+A.sds[i]));ctx.moveTo(gx-6,P.Y(mean-A.sds[i]));ctx.lineTo(gx+6,P.Y(mean-A.sds[i]));ctx.moveTo(gx-6,P.Y(mean+A.sds[i]));ctx.lineTo(gx+6,P.Y(mean+A.sds[i]));ctx.stroke();ctx.restore();
+      }
+      if(s>=q.fr.means||q.mode==='sum'&&s>=q.fr.groups){ctx.save();ctx.strokeStyle=C[nm];ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(gx-18,P.Y(mean));ctx.lineTo(gx+18,P.Y(mean));ctx.stroke();ctx.restore();}
+      if(s>=q.fr.between){ctx.save();ctx.strokeStyle=C.good;ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(gx+24,P.Y(mean));ctx.lineTo(gx+24,P.Y(A.gm));ctx.stroke();ctx.restore();}
+    }
+    if(s>=q.fr.between)T(ctx,'green = between',P.l+4,P.t+10,C.good,10.5,'left',700);
+    if(s>=q.fr.within&&q.mode==='groups')T(ctx,'red dotted = within',P.l+4,P.t+24,C.bad,10.5,'left',700);
+  }
+  var fr=q.fr,fs=q.mode==='table'?fr.fcurve:fr.fcurve;
+  if(s>=fs){
+    var fx0=two?W*0.6:24,fw=two?W-fx0-12:W-48,Pf=null;
+    if(two){
+      var xm=Math.max(A.F*1.5,A.fc*1.9,4),ym=0,t;for(t=0.05;t<=xm;t+=xm/80)ym=Math.max(ym,fPDF(t,A.d1,A.d2));
+      Pf=plot(W,H,{x0:0,x1:xm,y1:ym*1.15,l:fx0,r:12,t:30,b:34});
+      axisX(ctx,Pf,C,niceTicks(0,xm,6));T(ctx,'F('+A.d1+', '+A.d2+') under H₀',fx0+fw/2,16,C.ink3,11,'center');
+      curve(ctx,Pf,function(x){return fPDF(x,A.d1,A.d2);},0.001,xm,C.accent,2.4);
+      vline(ctx,Pf,A.fc,C.ink3,'F* '+fx(A.fc,2),{top:Pf.t+14,align:'right'});
+      vline(ctx,Pf,Math.min(A.F,xm),C.warn,'F '+fx(A.F,2),{top:Pf.t+2,align:'left'});
+      if(s>=fr.tail){shade(ctx,Pf,function(x){return fPDF(x,A.d1,A.d2);},Math.min(A.F,xm),xm,C.a('bad',0.35));T(ctx,'p = '+rP(A.p),Pf.W-Pf.r,Pf.t+34,C.bad,12,'right',700);}
+    } else {T(ctx,'F = '+fx(A.F,2)+'   critical F* = '+fx(A.fc,2)+'   p = '+rP(A.p),W/2,H-6,C.warn,12,'center',700);}
+  }
+}
+/* ================= MODULE: PCA (Wk 13) ================= */
+/* ---------- 1. variance explained and scree plot ---------- */
+function genScree(){
+  var p=pick([4,5,6]),l=[rnd(30,60)/10],i;
+  for(i=1;i<p;i++)l.push(Math.max(0.1,rd(l[i-1]*(0.35+Math.random()*0.4),1)));
+  var tot=sum(l),pr=l.map(function(v){return v/tot;}),cum=[],c=0;pr.forEach(function(v){c+=v;cum.push(c);});
+  var th=pick([0.8,0.9]),kk=1;while(cum[kk-1]<th-1e-9&&kk<p)kk++;
+  var two=cum[1];
+  return {
+    story:'A data set has '+p+' measurements per item. After PCA, the "importance" (variance) of each new direction is '+l.join(', ')+', from biggest to smallest. Work out what share of the total each direction carries, how much the first two carry together, and how many directions you must keep to hold on to at least '+(th*100)+'% of the information.',
+    text:'The eigenvalues of the covariance matrix are λ = ('+l.join(', ')+'). Compute the proportion of the total variance explained by each principal component, the proportion explained by the first two PCs, and the smallest number of PCs that explains at least '+(th*100)+'% of the variance. What does a scree plot show?',
+    pills:l.map(function(v,j){return 'λ'+(j+1)+' = '+v;}),
+    steps:[
+      S('Total variance','The total variance is the sum of all eigenvalues (it equals the trace of the covariance matrix).','Total = '+l.join(' + ')+' = '+fx(tot,1),'Total = '+fx(tot,1)),
+      S('Proportion explained by each PC','The i-th PC explains λᵢ / Σλⱼ of the total variance.',l.map(function(v,j){return 'PC'+(j+1)+': '+v+' / '+fx(tot,1)+' = '+fx(pr[j],4)+'  ('+fx(pr[j]*100,1)+'%)';}).join('\n')),
+      S('Cumulative proportion','Add the proportions from the first PC up to the k-th PC.',cum.map(function(v,j){return 'first '+(j+1)+': '+fx(v*100,1)+'%';}).join('\n')+'\n\nFirst two PCs: ('+l[0]+' + '+l[1]+') / '+fx(tot,1)+' = '+fx(two,4),'First two PCs explain '+fx(two*100,1)+'%'),
+      S('How many PCs to keep?','Keep the smallest k whose cumulative proportion reaches the target. A scree plot of the eigenvalues helps too: keep the components before the curve flattens out (the elbow).','target = '+(th*100)+'%\nk = '+kk+'  (cumulative '+fx(cum[kk-1]*100,1)+'%)','Keep '+kk+' PC'+(kk>1?'s':'')+' to explain at least '+(th*100)+'% of the variance.','good')
+    ],
+    draw:function(ctx,W,H,s,C){drawScreeFig(ctx,W,H,s,C,{l:l,pr:pr,cum:cum,th:th,kk:kk,lab:'eigenvalue λ'});}
+  };
+}
+function drawScreeFig(ctx,W,H,s,C,q){
+  var p=q.l.length,P=plot(W,H,{x0:0.4,x1:p+0.6,y1:Math.max.apply(null,q.l)*1.25,l:40,r:44,t:28,b:34}),i,m=Math.max.apply(null,q.l)*1.25;
+  axisX(ctx,P,C,[]);for(i=1;i<=p;i++)T(ctx,'PC'+i,P.X(i),P.Y(0)+16,C.ink2,11.5,'center',700);
+  niceTicks(0,m,4).forEach(function(v){T(ctx,nz(v),P.l-5,P.Y(v)+4,C.ink3,10.5,'right');});
+  T(ctx,'scree plot: '+q.lab,P.l,16,C.ink3,11,'left');
+  var bw=Math.min(48,P.pw/p*0.55);
+  for(i=0;i<p;i++){var x=P.X(i+1),y=P.Y(q.l[i]),keep=s>=4&&i<q.kk;ctx.fillStyle=C.a(keep?'good':'accent',keep?0.5:0.3);ctx.fillRect(x-bw/2,y,bw,P.Y(0)-y);ctx.strokeStyle=keep?C.good:C.accent;ctx.lineWidth=keep?2.6:1.8;ctx.strokeRect(x-bw/2,y,bw,P.Y(0)-y);T(ctx,String(q.l[i]),x,y-5,C.ink,11.5,'center',700);if(s>=2)T(ctx,fx(q.pr[i]*100,1)+'%',x,P.Y(0)-6,C.ink,11,'center',700);}
+  ctx.save();ctx.strokeStyle=C.ink3;ctx.lineWidth=1.4;ctx.setLineDash([3,3]);ctx.beginPath();for(i=0;i<p;i++){var xx=P.X(i+1),yy=P.Y(q.l[i]);if(i)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy);}ctx.stroke();ctx.restore();
+  if(s>=3){var Pc=function(v){return P.Y(v*m);};ctx.save();ctx.strokeStyle=C.warn;ctx.lineWidth=2.4;ctx.beginPath();for(i=0;i<p;i++){var cx=P.X(i+1),cy=Pc(q.cum[i]);if(i)ctx.lineTo(cx,cy);else ctx.moveTo(cx,cy);}ctx.stroke();ctx.fillStyle=C.warn;for(i=0;i<p;i++){ctx.beginPath();ctx.arc(P.X(i+1),Pc(q.cum[i]),3.8,0,7);ctx.fill();}ctx.restore();T(ctx,'cumulative %',P.W-P.r+4,Pc(q.cum[p-1])+4,C.warn,10.5,'left',700);for(i=0;i<p;i++)T(ctx,fx(q.cum[i]*100,0)+'%',P.X(i+1)+6,Pc(q.cum[i])-8,C.warn,10.5,'left',700);}
+  if(s>=4){ctx.save();ctx.strokeStyle=C.good;ctx.setLineDash([6,4]);ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(P.l,P.Y(q.th*m));ctx.lineTo(P.W-P.r,P.Y(q.th*m));ctx.stroke();ctx.restore();T(ctx,(q.th*100)+'% target',P.l+4,P.Y(q.th*m)-5,C.good,11,'left',700);}
+}
+/* ---------- 2. principal components of a 2x2 covariance matrix ---------- */
+function genPc2(){
+  var M=pick([[5,2,2],[2,1,2],[3,1,3],[8,2,5],[5,4,5],[10,3,2],[6,2,3]]);
+  var a=M[0],b=M[1],c=M[2],tr=a+c,det=a*c-b*b,disc=Math.sqrt(tr*tr-4*det),l1=(tr+disc)/2,l2=(tr-disc)/2;
+  var vx=b,vy=l1-a;if(Math.abs(vx)<1e-9&&Math.abs(vy)<1e-9){vx=1;vy=0;}var nr=Math.sqrt(vx*vx+vy*vy),u1=[vx/nr,vy/nr],u2=[-u1[1],u1[0]],th=Math.atan2(u1[1],u1[0])*180/Math.PI,ex=l1/(l1+l2);
+  var pts=[],i;for(i=0;i<70;i++){var z1=rnorm()*Math.sqrt(l1),z2=rnorm()*Math.sqrt(l2);pts.push([z1*u1[0]+z2*u2[0],z1*u1[1]+z2*u2[1]]);}
+  return {
+    story:'Two measurements per item have spreads and a link between them summarized by the covariance matrix Σ = [[ '+a+', '+b+' ], [ '+b+', '+c+' ]]. The first principal direction is the way the cloud of points is stretched the most. Find how long the stretch is in each of the two perpendicular directions (the eigenvalues), the direction of the longest stretch, and the share of the total spread it carries.',
+    text:'The covariance matrix of (X₁, X₂) is Σ = [[ '+a+', '+b+' ], [ '+b+', '+c+' ]]. Find its eigenvalues and the first principal component direction u₁, and the proportion of the variance explained by the first PC.',
+    pills:['Σ11 = '+a,'Σ12 = '+b,'Σ22 = '+c],
+    steps:[
+      S('The covariance matrix','Σ is square and symmetric. The diagonal entries are variances, the off-diagonal entry is the covariance (redundancy) between the variables.','Σ = [ '+a+'  '+b+' ]\n    [ '+b+'  '+c+' ]\ntrace = '+a+' + '+c+' = '+tr+',  det = '+a+'·'+c+' − '+b+'² = '+det),
+      S('Characteristic equation','The eigenvalues λ solve det(Σ − λI) = 0, which for a 2 × 2 matrix is λ² − trace·λ + det = 0.','λ² − '+tr+'λ + '+det+' = 0'),
+      S('Eigenvalues','Use the quadratic formula. The larger one is λ₁ (the variance along PC1).','λ = ('+tr+' ± √('+tr+'² − 4·'+det+')) / 2\n  = ('+tr+' ± '+fx(disc,3)+') / 2','λ₁ = '+fx(l1,3)+',  λ₂ = '+fx(l2,3)),
+      S('First principal direction u₁','Solve (Σ − λ₁I)u = 0. For a 2 × 2 matrix a solution is u ∝ (b, λ₁ − a). Then scale to length 1 (a unit vector).','u ∝ ('+b+', '+fx(l1,3)+' − '+a+') = ('+b+', '+fx(l1-a,3)+')\n‖u‖ = '+fx(nr,4)+'\nu₁ = ('+fx(u1[0],4)+', '+fx(u1[1],4)+')','u₁ = ('+fx(u1[0],3)+', '+fx(u1[1],3)+'),  about '+fx(th,1)+'° from the x₁ axis'),
+      S('Proportion of variance explained','The first PC explains λ₁/(λ₁ + λ₂). The second direction u₂ is perpendicular to u₁.','λ₁/(λ₁ + λ₂) = '+fx(l1,3)+' / '+fx(l1+l2,3)+'\nu₂ = ('+fx(u2[0],3)+', '+fx(u2[1],3)+')','PC1 explains '+fx(ex*100,1)+'% of the total variance.','good')
+    ],
+    draw:function(ctx,W,H,s,C){drawPcFig(ctx,W,H,s,C,{pts:pts,u1:u1,u2:u2,l1:l1,l2:l2,mode:'cloud'});}
+  };
+}
+/* ---------- 3. projection onto PC1 ---------- */
+function genProj(){
+  var u=pick([[3,4,5],[4,3,5],[5,12,13],[12,5,13],[8,15,17],[15,8,17]]),sg=pick([1,-1]),u1=[u[0]/u[2],sg*u[1]/u[2]],u2=[-u1[1],u1[0]];
+  var x=[rnd(-7,7),rnd(-7,7)];if(x[0]===0&&x[1]===0)x=[4,-3];
+  var z1=x[0]*u1[0]+x[1]*u1[1],z2=x[0]*u2[0]+x[1]*u2[1],pr=[z1*u1[0],z1*u1[1]],re=[x[0]-pr[0],x[1]-pr[1]],err=Math.sqrt(re[0]*re[0]+re[1]*re[1]),nx2=x[0]*x[0]+x[1]*x[1];
+  var u1t='('+(sg*u[1]<0?'':'')+u[0]+'/'+u[2]+', '+(sg*u[1])+'/'+u[2]+')';
+  return {
+    story:'The first principal direction is the unit arrow u₁ = '+u1t+'. A centered point sits at x = ('+x[0]+', '+x[1]+'). Drop it straight onto the line through u₁ (that is its PC1 score), then measure how far the point was from the line (what compressing to one number loses).',
+    text:'The first principal component direction is u₁ = '+u1t+' and the data are centered. For the observation x = ('+x[0]+', '+x[1]+'), compute its first PC score z₁ = u₁ᵀx, its projection onto the PC1 line, and the reconstruction error.',
+    pills:['x = ('+x[0]+', '+x[1]+')'],
+    steps:[
+      S('Check u₁ is a unit vector','Principal directions are orthonormal: unit length (uᵀu = 1) and mutually perpendicular.','‖u₁‖² = ('+u[0]+'/'+u[2]+')² + ('+(sg*u[1])+'/'+u[2]+')² = '+(u[0]*u[0]+u[1]*u[1])+'/'+(u[2]*u[2])+' = 1','u₁ has length 1'),
+      S('PC1 score z₁ = u₁ᵀ x','The score is the signed length of the projection of x along u₁, a dot product.','z₁ = '+u[0]+'/'+u[2]+' × '+x[0]+' + '+(sg*u[1])+'/'+u[2]+' × '+x[1]+'\n   = '+fx(z1,4),'z₁ = '+fx(z1,3)),
+      S('Projection point','The projection of x onto the PC1 line is z₁ times the unit vector u₁.','z₁·u₁ = '+fx(z1,3)+' × ('+fx(u1[0],3)+', '+fx(u1[1],3)+')\n     = ('+fx(pr[0],3)+', '+fx(pr[1],3)+')','Projection ('+fx(pr[0],2)+', '+fx(pr[1],2)+')'),
+      S('Reconstruction error','What is lost by keeping only z₁ is the part of x perpendicular to the line: x − z₁u₁.','x − z₁u₁ = ('+x[0]+' − '+fx(pr[0],3)+', '+x[1]+' − '+fx(pr[1],3)+')\n         = ('+fx(re[0],3)+', '+fx(re[1],3)+')\n‖error‖ = '+fx(err,3),'Error = '+fx(err,3)),
+      S('Check with the second PC','The second score z₂ = u₂ᵀx is the length of that lost piece. Pythagoras: z₁² + z₂² = ‖x‖².','u₂ = ('+fx(u2[0],3)+', '+fx(u2[1],3)+'),  z₂ = '+fx(z2,3)+'\nz₁² + z₂² = '+fx(z1*z1,3)+' + '+fx(z2*z2,3)+' = '+fx(z1*z1+z2*z2,3)+'  =  ‖x‖² = '+nx2,'|z₂| = '+fx(Math.abs(z2),3)+' = reconstruction error ✓','good')
+    ],
+    draw:function(ctx,W,H,s,C){drawPcFig(ctx,W,H,s,C,{x:x,u1:u1,u2:u2,pr:pr,mode:'proj'});}
+  };
+}
+function drawPcFig(ctx,W,H,s,C,q){
+  var R=q.mode==='cloud'?Math.max.apply(null,q.pts.map(function(p){return Math.max(Math.abs(p[0]),Math.abs(p[1]));}))*1.15:Math.max(Math.abs(q.x[0]),Math.abs(q.x[1]),3)*1.35,P=plot(W,H,{x0:-R,x1:R,y0:-R,y1:R,l:30,r:20,t:24,b:30}),cx=P.X(0),cy=P.Y(0),sx=P.pw/(2*R),sy=P.ph/(2*R),sc=Math.min(sx,sy);
+  var X=function(v){return cx+v*sc;},Y=function(v){return cy-v*sc;};
+  ctx.save();ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(P.l,cy);ctx.lineTo(P.W-P.r,cy);ctx.moveTo(cx,P.t);ctx.lineTo(cx,P.H-P.b);ctx.stroke();ctx.restore();
+  T(ctx,'x₁',P.W-P.r,cy-6,C.ink3,11,'right');T(ctx,'x₂',cx+6,P.t+4,C.ink3,11,'left');
+  var arrow=function(vx,vy,col,label,len){var ex=X(vx*len),ey=Y(vy*len);ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.stroke();var an=Math.atan2(ey-cy,ex-cx);ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-10*Math.cos(an-0.4),ey-10*Math.sin(an-0.4));ctx.lineTo(ex-10*Math.cos(an+0.4),ey-10*Math.sin(an+0.4));ctx.closePath();ctx.fill();ctx.restore();T(ctx,label,ex+(ex>cx?6:-6),ey-6,col,12,ex>cx?'left':'right',700);};
+  if(q.mode==='cloud'){
+    q.pts.forEach(function(p){ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),3.2,0,7);ctx.fillStyle=C.a('sky',0.55);ctx.fill();});
+    if(s>=3){var a=Math.atan2(q.u1[1],q.u1[0]);ctx.save();ctx.translate(cx,cy);ctx.rotate(-a);ctx.strokeStyle=C.ink3;ctx.setLineDash([5,3]);ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(0,0,Math.sqrt(q.l1)*sc,Math.sqrt(q.l2)*sc,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    if(s>=4)arrow(q.u1[0],q.u1[1],C.accent,'PC1  (λ₁ = '+fx(q.l1,2)+')',Math.sqrt(q.l1)*1.1);
+    if(s>=5)arrow(q.u2[0],q.u2[1],C.warn,'PC2  (λ₂ = '+fx(q.l2,2)+')',Math.sqrt(q.l2)*1.1);
+  } else {
+    var L=R*0.95;[[q.u1,C.accent,'PC1 line'],[q.u2,C.warn,'PC2 line']].forEach(function(l,i){if(i===1&&s<5)return;ctx.save();ctx.strokeStyle=l[1];ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(X(-l[0][0]*L),Y(-l[0][1]*L));ctx.lineTo(X(l[0][0]*L),Y(l[0][1]*L));ctx.stroke();ctx.restore();T(ctx,l[2],X(l[0][0]*L*0.94),Y(l[0][1]*L*0.94)-8,l[1],11,'center',700);});
+    if(s>=1)arrow(q.u1[0],q.u1[1],C.accent,'u₁',3.2);
+    if(s>=3){ctx.save();ctx.strokeStyle=C.bad;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(X(q.x[0]),Y(q.x[1]));ctx.lineTo(X(q.pr[0]),Y(q.pr[1]));ctx.stroke();ctx.restore();ctx.beginPath();ctx.arc(X(q.pr[0]),Y(q.pr[1]),5.5,0,7);ctx.fillStyle=C.accent;ctx.fill();T(ctx,'projection',X(q.pr[0]),Y(q.pr[1])+16,C.accent,11,'center',700);}
+    if(s>=4)T(ctx,'lost (reconstruction error)',(X(q.x[0])+X(q.pr[0]))/2+8,(Y(q.x[1])+Y(q.pr[1]))/2,C.bad,10.5,'left',700);
+    ctx.beginPath();ctx.arc(X(q.x[0]),Y(q.x[1]),7,0,7);ctx.fillStyle=C.a('sky',0.7);ctx.fill();ctx.strokeStyle=C.sky;ctx.lineWidth=2.4;ctx.stroke();T(ctx,'x = ('+q.x[0]+', '+q.x[1]+')',X(q.x[0]),Y(q.x[1])-12,C.sky,11.5,'center',700);
+  }
+}
+/* ---------- 4. PCA and SVD ---------- */
+function genSvd(){
+  var n=pick([20,30,50,100]),p=pick([3,4]),sg=[rnd(14,30)],i;
+  for(i=1;i<p;i++)sg.push(Math.max(2,Math.round(sg[i-1]*(0.35+Math.random()*0.35))));
+  var lam=sg.map(function(v){return v*v;}),tot=sum(lam),varj=lam.map(function(v){return v/(n-1);}),pr=lam.map(function(v){return v/tot;});
+  return {
+    story:'A computer splits the centered data matrix of '+n+' items into pieces (an SVD) and reports the "strength" numbers (singular values) '+sg.join(', ')+'. Turn them into the eigenvalues of XᵀX, then into the actual variance of each principal component, and the share of the total variance each carries.',
+    text:'The SVD of a centered data matrix X (n = '+n+' rows) has singular values σ = ('+sg.join(', ')+'). Find the eigenvalues of XᵀX, the variance of each principal component, and the proportion of variance explained by each PC.',
+    pills:['n = '+n].concat(sg.map(function(v,j){return 'σ'+(j+1)+' = '+v;})),
+    steps:[
+      S('Eigenvalues of XᵀX are the squared singular values','From X = UΣVᵀ we get XᵀX = VΣ²Vᵀ, so λⱼ = σⱼ². The principal directions are the columns of V.',sg.map(function(v,j){return 'λ'+(j+1)+' = '+v+'² = '+lam[j];}).join('\n'),'λ = ('+lam.join(', ')+')'),
+      S('Variance of each PC = σⱼ² / (n − 1)','XᵀX is (n − 1) times the sample covariance matrix, so divide by n − 1.',lam.map(function(v,j){return 'Var(PC'+(j+1)+') = '+v+' / '+(n-1)+' = '+fx(varj[j],3);}).join('\n')),
+      S('Proportion explained','Divide each eigenvalue by the total of the eigenvalues. (The n − 1 cancels.)','Total = '+lam.join(' + ')+' = '+tot+'\n'+lam.map(function(v,j){return 'PC'+(j+1)+': '+v+'/'+tot+' = '+fx(pr[j],4)+'  ('+fx(pr[j]*100,1)+'%)';}).join('\n'),'PC1 explains '+fx(pr[0]*100,1)+'% of the variance.'),
+      S('Why SVD is used','SVD works directly on the data matrix X (any shape), without forming XᵀX, and is the standard way software computes PCA, also for high-dimensional data.','First two PCs: ('+lam[0]+' + '+lam[1]+') / '+tot+' = '+fx((lam[0]+lam[1])/tot,4),'First two PCs explain '+fx((lam[0]+lam[1])/tot*100,1)+'%.','good')
+    ],
+    draw:function(ctx,W,H,s,C){var cum=[],c=0;pr.forEach(function(v){c+=v;cum.push(c);});drawScreeFig(ctx,W,H,Math.min(s+1,4),C,{l:lam,pr:pr,cum:cum,th:0.9,kk:1,lab:'squared singular value σ² (= eigenvalue)'});}
+  };
+}
+
 var MODULES=[
   {id:'desc',label:'Descriptive Statistics',week:'Wk 1',blurb:'Frequency tables with pie and bar graphs, histograms, ogives, shape, mean, median and mode, quartiles and boxplots, standard deviation, scatter plots with correlation, and stem-and-leaf plots.',types:[
     {id:'freq',label:'Pie & bar graph',gen:genFreq},{id:'hist',label:'Histogram',gen:genHist},{id:'ogive',label:'Ogive',gen:genOgive},{id:'shape',label:'Shape & center',gen:genShape},{id:'center',label:'Mean, median, mode',gen:genCenter},{id:'quart',label:'Quartiles & boxplot',gen:genQuart},{id:'sdev',label:'Variance & SD',gen:genSdev},{id:'corr',label:'Correlation',gen:genCorr},{id:'stem',label:'Stem-and-leaf',gen:genStem},{id:'transform',label:'Linear transforms',gen:genTransform}]},
@@ -2612,6 +3034,12 @@ var MODULES=[
     {id:'ciz',label:'Mean, σ known',gen:genCIz},{id:'cit',label:'Mean, σ unknown',gen:genCIt},{id:'civ',label:'Variance',gen:genCIvar},{id:'cin',label:'Sample size',gen:genCIn}]},
   {id:'tests',label:'Hypothesis Testing',week:'Wk 10',blurb:'Setting up tests, z and t tests with p-values, Type I and II error and power, and the link to confidence intervals.',types:[
     {id:'setup',label:'Set up the test',gen:genSetup},{id:'tz',label:'z test',gen:genTestZ},{id:'tt',label:'t test',gen:genTestT},{id:'power',label:'Error and power',gen:genPower},{id:'dual',label:'Test and CI',gen:genDuality}]}
+  ,{id:'reg',label:'Linear Regression',week:'Wk 11',blurb:'Fitting the least-squares line, prediction and extrapolation, reading R output, R² and adjusted R², and multiple regression.',types:[
+    {id:'regfit',label:'Fit the line',gen:genRegFit},{id:'regpred',label:'Predict & residual',gen:genRegPred},{id:'regout',label:'Read lm output',gen:genRegOut},{id:'r2',label:'R² & adjusted R²',gen:genR2},{id:'mlr',label:'Multiple regression',gen:genMlr}]}
+  ,{id:'anova',label:'ANOVA',week:'Wk 12',blurb:'One-way ANOVA from raw data and from summary statistics, unequal group sizes, and completing the ANOVA table.',types:[
+    {id:'aovraw',label:'From raw data',gen:genAovRaw},{id:'aovuneq',label:'Unequal sizes',gen:genAovUneq},{id:'aovsum',label:'From summaries',gen:genAovSum},{id:'aovtbl',label:'Complete the table',gen:genAovTbl}]}
+  ,{id:'pca',label:'PCA',week:'Wk 13',blurb:'Variance explained and scree plots, principal components of a covariance matrix, projections, and the link to SVD.',types:[
+    {id:'scree',label:'Scree plot',gen:genScree},{id:'pc2',label:'PCs of a 2×2 matrix',gen:genPc2},{id:'proj',label:'Project a point',gen:genProj},{id:'svd',label:'PCA & SVD',gen:genSvd}]}
   ,{id:'quiz',label:'Quiz',week:'MC · T/F',blurb:'Concept check: multiple choice and true/false questions from the lectures, problem sets and tutorials. Pick an answer to see why.',types:[],quiz:true}
 ];
 
@@ -2690,6 +3118,19 @@ function fvLegend(q){
   return parts.length?'Words stand in for letters: '+parts.join(', ')+'. Formulas below still use the letters.':'';
 }
 var TIPS={
+  regfit:["find x̄ and ȳ, then the deviations dx and dy for every pair", "b = Sxy / Sxx, then a = ȳ − b·x̄. The line always passes through (x̄, ȳ)", "a residual is observed − predicted, so a point above the line has a positive residual."],
+  regpred:["interpret the slope as the change in the MEAN of y per one-unit increase in x", "plug x into ŷ = a + bx. Check whether x is inside the range of the data", "outside the data range is extrapolation, which can give impossible values, so be cautious."],
+  regout:["read the Estimate column for the line (the Std. Error column is not part of it)", "SSE = s² × df, R² = 1 − SSE/SST with SST = (n − 1)·sd(y)², and test the slope with t = b / SE(b) on n − 2 df", "residual standard error is in the units of y, not a proportion, and a small p-value means the coefficient is not 0."],
+  r2:["split SST into SSR and SSE: SSR = SST − SSE", "R² = 1 − SSE/SST, and adjusted R² = 1 − [SSE/(n − k − 1)] / [SST/(n − 1)]", "R² never goes down when you add predictors, so compare models with adjusted R²."],
+  mlr:["write the equation from the Estimate column, one coefficient for each predictor", "interpret each slope “holding the other predictors fixed”, check each p-value against 0.05, and use df = n − k − 1", "a predictor can be significant alone but not after other predictors are in the model."],
+  aovraw:["state H₀ (all means equal) and Hₐ (not all equal), then find the group means and the grand mean", "SSB = Σ nᵢ(x̄ᵢ − x̄)², SSW = Σ Σ (x − x̄ᵢ)², MSB = SSB/(k − 1), MSW = SSW/(N − k), F = MSB/MSW", "the F test is upper-tailed, and rejecting H₀ does not tell you WHICH groups differ."],
+  aovuneq:["count each group’s size nᵢ and N = Σ nᵢ", "the formulas are the same: weight each group mean by its size in the grand mean and in SSB", "df within is N − k, not n − k, and a bigger group counts more in SSB."],
+  aovsum:["the grand mean is the size-weighted average of the group means", "SSW = Σ (nᵢ − 1)sᵢ² and SSB = Σ nᵢ(x̄ᵢ − x̄)², then F = MSB/MSW", "use sample variances sᵢ², not standard deviations, in SSW, and keep the order of the df: (k − 1, N − k)."],
+  aovtbl:["compute the three df first: k − 1, N − k, N − 1", "divide each SS by its df to get MSB and MSW, then F = MSB/MSW and compare with F(k − 1, N − k)", "SST = SSB + SSW and the df add up the same way, so use that as a check."],
+  scree:["add up all eigenvalues to get the total variance", "proportion of PC i = λᵢ / total, then add up proportions for the cumulative share", "keep the smallest number of PCs that reaches your target, or the ones before the “elbow” of the scree plot."],
+  pc2:["write trace and determinant of the 2 × 2 covariance matrix", "solve λ² − trace·λ + det = 0 for the eigenvalues, then u ∝ (b, λ₁ − a) for the first PC and scale it to length 1", "the first PC belongs to the LARGEST eigenvalue, and the two PCs are perpendicular."],
+  proj:["check the direction u₁ has length 1", "the score is the dot product z₁ = u₁ᵀx, the projection is z₁u₁, and the error is x − z₁u₁", "the lost part equals the score on the perpendicular PC, and z₁² + z₂² = ‖x‖²."],
+  svd:["eigenvalues of XᵀX are the squared singular values: λⱼ = σⱼ²", "variance of PC j is σⱼ²/(n − 1), and the proportion explained is σⱼ² / Σσ²", "the n − 1 cancels in the proportions, and the principal directions are the columns of V."],
   space:["write the sample space (all equally likely outcomes) and count it", "list or count the outcomes that belong to the event, then P(event) = favorable ÷ total", "order matters: (1, 2) and (2, 1) are different outcomes, so a sum of 3 has 2 outcomes, not 1."],
   venn:["put P(A ∩ B) in the overlap first", "fill the other pieces by subtraction (A only = P(A) − P(A ∩ B)), check that all four pieces add to 1, then read off any region you need", "use P(A ∪ B) = P(A) + P(B) − P(A ∩ B), and remember (A ∪ B)ᶜ = Aᶜ ∩ Bᶜ."],
   axiom:["call the smallest probability p and write all the others as multiples of p", "use P(S) = 1: add all the multiples, set the total equal to 1 and solve for p", "add probabilities only for DISJOINT events (single outcomes are always disjoint)."],
