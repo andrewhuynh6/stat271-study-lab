@@ -62,6 +62,22 @@ button{font-family:inherit}
 .top p{color:var(--ink-2); font-size:14px; margin-top:3px; max-width:56ch}
 .top .note{font-family:var(--font-m); font-size:11.5px; color:var(--ink-3); max-width:36ch; line-height:1.45}
 
+.prof{display:flex; gap:14px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:16px}
+.prof-face{flex:0 0 auto; width:68px; height:72px}
+.prof-face svg{width:100%; height:100%; display:block}
+.prof-body{flex:1; min-width:0; display:grid; gap:8px}
+.bubble{position:relative; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:13.5px; line-height:1.45; color:var(--ink)}
+.bubble::before{content:""; position:absolute; left:-7px; top:16px; width:12px; height:12px; background:var(--surface-2); border-left:1px solid var(--line); border-bottom:1px solid var(--line); transform:rotate(45deg)}
+.prof-meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--font-m); font-size:11.5px; color:var(--ink-3)}
+.meter{flex:1; min-width:70px; height:6px; background:rgba(var(--ink-rgb),.12); border-radius:999px; overflow:hidden}
+.meter i{display:block; height:100%; width:0; background:var(--good)}
+.linkbtn{background:none; border:none; padding:0; font:inherit; color:var(--ink-3); text-decoration:underline; text-underline-offset:3px; cursor:pointer}
+.linkbtn:hover{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+  .meter i{transition:width .5s}
+  .prof-face.pop svg{animation:profpop .45s ease}
+  @keyframes profpop{0%{transform:scale(.9) rotate(-4deg)} 55%{transform:scale(1.08) rotate(3deg)} 100%{transform:scale(1) rotate(0)}}
+}
 .rail{display:flex; gap:2px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:20px; scrollbar-width:none}
 .rail::-webkit-scrollbar{display:none}
 .tab{
@@ -160,6 +176,13 @@ button{font-family:inherit}
     </div>
     <div class="note">Answers are computed in code. Your exam tables round to 3 or 4 decimals, so expect small differences.</div>
   </header>
+  <section class="prof" id="prof" aria-live="polite">
+    <div class="prof-face" id="profFace" role="img" aria-label="Your professor"></div>
+    <div class="prof-body">
+      <div class="bubble" id="profSay"></div>
+      <div class="prof-meta"><span id="profMood"></span><div class="meter"><i id="profBar"></i></div><button type="button" class="linkbtn" id="profReset">Reset</button></div>
+    </div>
+  </section>
   <nav class="rail" id="rail" role="tablist" aria-label="Topics"></nav>
   <main id="stage"></main>
 </div>
@@ -1798,6 +1821,91 @@ var VARIANTS={
 };
 MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+t.id];if(v)t.variants=v.map(function(x,i){return {id:'v'+i,label:x[0],re:x[1]};});});});
 
+/* ================= the professor ================= */
+var PROF_MOODS=['Skeptical','Warming up','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=2;
+var PROF_GREET=[
+  ['Ah, a new student. I’m withholding judgment. And pride.','Finish one question and I’ll consider smiling.'],
+  ['You’re back. I’m allowed to be slightly impressed.','Keep going. My eyebrow is starting to relax.'],
+  ['Look who’s being productive. I’m smiling. Don’t make it weird.','Solid work so far. I only checked twice.'],
+  ['I’m so proud I’m using the good chalk.','You’re doing great. I told the department. They didn’t care, but I did.'],
+  ['I’m tearing up. It’s the chalk dust. And pride.','You’ve worked through a heroic number of questions. I’m framing this.']
+];
+var PROF_DONE=[
+  ['One down. I’m cautiously not disappointed.','You read the steps! Revolutionary.','A finished question. Someone mark the calendar.'],
+  ['Another one! My left eyebrow is lowering.','Nice. That’s what we in the business call progress.','Two things I like: probability, and you finishing things.'],
+  ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant roll.','That was clean. Do another, I’m enjoying this.'],
+  ['Magnificent. I need a moment.','You’re making this old professor very happy.','Textbook. And I have read the textbook.'],
+  ['I can’t stop smiling. Someone get me a tissue.','Legend. They’ll name a p-value after you.','The exam won’t know what hit it.']
+];
+var PROF_LEVELUP=['','Level up! I’m warming up to you.','Level up! I’m officially pleased. Don’t tell the other students.','Level up! I’m proud. Excuse me, something is in my eye.','Level up! I’m overjoyed. I may cry on the whiteboard.'];
+var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I only cried a little. Let’s go.','Okay, that’s one. The sulking is over. Don’t do that again.'];
+function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
+function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
+function profDays(a,b){var pa=a.split('-'),pb=b.split('-');return Math.round((Date.UTC(+pb[0],+pb[1]-1,+pb[2])-Date.UTC(+pa[0],+pa[1]-1,+pa[2]))/864e5);}
+function profLoad(){try{var o=JSON.parse(localStorage.getItem('stat271-prof2')||'null');if(o&&typeof o.pts==='number')return o;}catch(e){}return null;}
+function profSave(){try{localStorage.setItem('stat271-prof2',JSON.stringify(PROF));}catch(e){}}
+var PROF=profLoad(),profSad=false,profArm=0,profGreeting='';
+(function(){
+  var today=profToday();
+  if(!PROF){PROF={pts:0,total:0,last:today};profGreeting=pick(PROF_GREET[0]);}
+  else{
+    var away=profDays(PROF.last,today),missed=Math.max(0,away-1),loss=Math.min(PROF.pts,missed*PROF_LOSS);
+    if(missed>0){
+      PROF.pts-=loss;profSad=true;
+      profGreeting=pick([
+        'You were gone '+away+' days. I got sad.'+(loss?' Pride dropped by '+loss+'.':''),
+        'I waited '+away+' days. I graded nothing. I reflected on my choices.'+(loss?' (Pride −'+loss+'.)':''),
+        'Oh, you remembered I exist.'+(loss?' I lost '+loss+' pride points, but I’m listening.':' Let’s fix this.')
+      ]);
+    } else profGreeting=pick(PROF_GREET[profLevel(PROF.pts)]);
+    PROF.last=today;
+  }
+  profSave();
+})();
+function profSVG(m){
+  var sad=m<0,ey=sad?46:43;
+  var brows=sad?['M25 36 L42 29','M54 29 L71 36']:[['M25 33 Q33 26 42 31','M54 35 L68 35'],['M25 32 Q33 28 42 32','M54 32 Q62 28 70 32'],['M25 34 Q33 30 42 34','M54 34 Q62 30 70 34'],['M25 30 Q33 25 42 30','M54 30 Q62 25 70 30'],['M25 28 Q33 22 42 28','M54 28 Q62 22 70 28']][m];
+  var mouth=sad?'M37 74 Q48 64 59 74':['M38 71 L58 69','M37 68 Q48 74 59 68','M35 66 Q48 78 61 66','M34 64 Q48 84 62 64 Z','M33 63 Q48 88 63 63 Z'][m];
+  var open=m>=3;
+  var eyes=m===4
+    ?'<path d="M27 46 Q33 38 39 46" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M57 46 Q63 38 69 46" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+    :'<circle cx="'+(m===0?35:33)+'" cy="'+ey+'" r="3.2" fill="#23283f"/><circle cx="'+(m===0?65:63)+'" cy="'+ey+'" r="3.2" fill="#23283f"/>';
+  var s='<svg viewBox="0 0 96 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+  s+='<circle cx="13" cy="42" r="8" fill="#c9cdd8"/><circle cx="14" cy="54" r="6" fill="#c9cdd8"/><circle cx="83" cy="42" r="8" fill="#c9cdd8"/><circle cx="82" cy="54" r="6" fill="#c9cdd8"/>';
+  s+='<ellipse cx="48" cy="46" rx="32" ry="35" fill="#f1c8a0" stroke="#23283f" stroke-width="2"/>';
+  s+='<path d="M36 15 Q48 8 60 15" stroke="#c9cdd8" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  if(m>=3)s+='<ellipse cx="25" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/><ellipse cx="71" cy="58" rx="6" ry="4" fill="#ff8c9a" opacity=".5"/>';
+  s+=eyes;
+  s+='<circle cx="33" cy="'+(m===4?43:ey)+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><circle cx="63" cy="'+(m===4?43:ey)+'" r="11" fill="none" stroke="#23283f" stroke-width="2"/><path d="M44 '+(m===4?43:ey)+' L52 '+(m===4?43:ey)+'" stroke="#23283f" stroke-width="2"/>';
+  s+='<path d="'+brows[0]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="'+brows[1]+'" stroke="#23283f" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  s+='<path d="M48 49 Q44 57 49 58" stroke="#23283f" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+  s+='<path d="'+mouth+'" stroke="#23283f" stroke-width="2.4" fill="'+(open?'#8a2f3b':'none')+'" stroke-linecap="round" stroke-linejoin="round"/>';
+  if(sad)s+='<ellipse cx="27" cy="60" rx="2" ry="3.4" fill="#7cc7f5"/>';
+  if(m===4)s+='<ellipse cx="28" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><ellipse cx="68" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><path d="M8 14 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#ffd166"/><path d="M86 10 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z" fill="#ffd166"/>';
+  s+='<path d="M36 92 L48 97 L60 92 L60 100 L48 96 L36 100z" style="fill:var(--accent)"/><circle cx="48" cy="96" r="3" style="fill:var(--accent)"/>';
+  return s+'</svg>';
+}
+function renderProf(line,pop){
+  var l=profLevel(PROF.pts),face=document.getElementById('profFace'),next=PROF_AT[l+1],name=profSad?'Disappointed':PROF_MOODS[l];
+  face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Your professor, mood: '+name);
+  document.getElementById('profSay').textContent=line;
+  document.getElementById('profMood').textContent=name+' · pride '+PROF.pts+(next?' · '+(next-PROF.pts)+' to '+PROF_MOODS[l+1].toLowerCase():'')+' · '+PROF.total+' solved';
+  document.getElementById('profBar').style.width=(next?Math.round((PROF.pts-PROF_AT[l])/(next-PROF_AT[l])*100):100)+'%';
+  if(pop){face.classList.remove('pop');void face.offsetWidth;face.classList.add('pop');}
+}
+function profDone(){
+  var before=profLevel(PROF.pts),wasSad=profSad;
+  PROF.pts++;PROF.total++;PROF.last=profToday();profSad=false;profSave();
+  var after=profLevel(PROF.pts);
+  renderProf(wasSad?pick(PROF_FORGIVE):after>before?PROF_LEVELUP[after]:pick(PROF_DONE[after]),true);
+}
+document.getElementById('profReset').onclick=function(){
+  var b=this;
+  if(!profArm){profArm=1;b.textContent='Sure? Click again';setTimeout(function(){profArm=0;b.textContent='Reset';},3000);return;}
+  profArm=0;PROF={pts:0,total:0,last:profToday()};profSad=false;profSave();b.textContent='Reset';renderProf('Fresh start. I’m skeptical again. Impress me.',true);
+};
+renderProf(profGreeting,false);
+
 /* ================= UI ================= */
 var rail=document.getElementById('rail'),stage=document.getElementById('stage');
 var state={id:MODULES[0].id,type:'mixed',variant:'any',q:null,s:0};
@@ -1853,6 +1961,7 @@ function prevStep(){if(!state.q||state.s<=0)return;state.s--;applyStep(false);}
 function nextStep(){if(!state.q||state.s>=state.q.steps.length)return;state.s++;applyStep(true);}
 function applyStep(scroll){
   var n=state.q.steps.length;
+  if(state.s>=n&&n>0&&!state.q.counted){state.q.counted=true;profDone();}
   Array.prototype.forEach.call(el.steps.children,function(c,i){c.classList.toggle('on',i<state.s);});
   el.count.textContent='step '+state.s+' of '+n;
   el.back.disabled=state.s<=0;el.next.disabled=state.s>=n;el.next.textContent=state.s>=n?'All steps shown':state.s===0?'Start':'Next step';
