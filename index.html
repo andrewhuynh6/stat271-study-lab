@@ -313,6 +313,13 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
   .rail-brand{display:block; font-family:var(--font-d); font-weight:800; font-size:22px; line-height:1.05; letter-spacing:-.4px; margin:0 2px 6px}
   .rail-brand small{display:block; font-family:var(--font-m); font-weight:500; font-size:11px; letter-spacing:.2px; color:var(--ink-3); margin-top:6px}
 }
+
+/* ===== show / hide the weeks bar ===== */
+#railToggle{position:fixed; top:16px; z-index:40; padding:6px 12px; font-size:13px; left:196px}
+body.rail-off #railToggle{left:14px}
+body.rail-off .rail{display:none}
+@media (min-width:981px){body.rail-off{padding-left:92px}}
+@media (max-width:980px){#railToggle{left:auto; right:14px; top:12px} body.rail-off #railToggle{left:auto}}
 </style>
 
 <div class="shell">
@@ -326,6 +333,7 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
       <p class="fine">Built from the Week 1 to 13 slides, problem sets, tutorials and midterms. Answers are computed in code, and exam tables round to 3 or 4 decimals, so expect small differences.</p>
     </aside>
   </header>
+  <button type="button" class="btn ghost" id="railToggle" aria-expanded="true" aria-controls="rail">‹ Hide</button>
   <div class="layout">
     <nav class="rail" id="rail" role="tablist" aria-label="Weeks"></nav>
     <main id="stage"></main>
@@ -3516,6 +3524,21 @@ function fillHeroStats(){
   var types=0;MODULES.forEach(function(m){if(!m.quiz)types+=m.types.length;});
   hs.innerHTML='<div class="stat"><b>13</b><span>weeks</span></div><div class="stat"><b>'+types+'</b><span>problem types</span></div><div class="stat"><b>'+QUIZ.length+'</b><span>quiz questions</span></div>';
 }
+function setRail(open,save){
+  document.body.classList.toggle('rail-off',!open);
+  var b=document.getElementById('railToggle');
+  if(b){b.textContent=open?'‹ Hide':'☰ Weeks';b.setAttribute('aria-expanded',open?'true':'false');}
+  if(save){try{localStorage.setItem('stat271-rail',open?'1':'0');}catch(e){}}
+  setTimeout(draw,60);
+}
+(function(){
+  var pref=null;try{pref=localStorage.getItem('stat271-rail');}catch(e){}
+  var open=pref===null?window.innerWidth>980:pref==='1';
+  var b=document.getElementById('railToggle');
+  if(b)b.onclick=function(){setRail(document.body.classList.contains('rail-off'),true);};
+  rail.addEventListener('click',function(e){if(e.target.closest('.tab')&&window.innerWidth<=980)setRail(false,false);});
+  setRail(open,false);
+})();
 renderRail();renderStage();initEasy();fillHeroStats();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
 })();
