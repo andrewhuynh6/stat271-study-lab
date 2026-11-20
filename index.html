@@ -261,7 +261,8 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
 
 /* ===== layout: weeks in a left bar, balanced hero ===== */
 .hero{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:28px; align-items:center; margin-bottom:22px}
-.hero-r{background:var(--surface); border:2px solid var(--edge); box-shadow:4px 4px 0 var(--edge); border-radius:16px; padding:18px 20px}
+.hero-r{background:var(--surface); border:2px solid var(--edge); box-shadow:4px 4px 0 var(--edge); border-radius:16px; padding:18px 22px}
+.hero-r .fine{font-size:15px; line-height:1.6}
 .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px}
 .stat{background:var(--surface-2); border:2px solid var(--edge); border-radius:12px; padding:10px 8px; text-align:center}
 .stat b{display:block; font-family:var(--font-d); font-size:clamp(26px,3.2vw,40px); line-height:1.05; font-weight:800}
@@ -297,7 +298,6 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
       <a class="btn" href="#stage" id="heroStart">Start practicing</a> <a class="btn ghost" href="#quiz" id="heroQuiz">Quiz</a>
     </div>
     <aside class="hero-r" aria-label="What is inside">
-      <div class="stats" id="heroStats"></div>
       <p class="fine">Built from the Week 1 to 13 slides, problem sets, tutorials and midterms. Answers are computed in code, and exam tables round to 3 or 4 decimals, so expect small differences.</p>
     </aside>
   </header>
