@@ -167,6 +167,19 @@ button{font-family:inherit}
 .ans.warn{color:var(--warn); background:rgba(var(--warn-rgb),.09); border-color:rgba(var(--warn-rgb),.3)}
 .err{padding:16px; color:var(--bad); font-family:var(--font-m); font-size:13px}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* ===== Professor in the corner: always visible ===== */
+.corner{position:fixed; right:max(10px,env(safe-area-inset-right,0px)); bottom:max(10px,env(safe-area-inset-bottom,0px)); z-index:60; display:flex; flex-direction:column; align-items:flex-end; gap:10px; pointer-events:none}
+.corner>*{pointer-events:auto}
+.corner-face{position:relative; width:112px; height:122px; padding:6px 6px 16px; background:var(--surface); border:2px solid var(--line); border-radius:18px; box-shadow:3px 3px 0 var(--line); cursor:pointer}
+.corner-face svg{width:100%; height:100%; display:block}
+.corner-meter{position:absolute; left:12px; right:12px; bottom:6px; height:7px; border-radius:99px; background:rgba(var(--ink-rgb),.15); overflow:hidden}
+.corner-meter i{display:block; height:100%; background:var(--good)}
+.corner-say{position:relative; max-width:min(320px,80vw); background:var(--surface); color:var(--ink); border:2px solid var(--line); border-radius:14px; padding:10px 14px; font-size:14.5px; font-weight:600; line-height:1.4; box-shadow:3px 3px 0 var(--line)}
+.corner-say::after{content:""; position:absolute; right:40px; bottom:-8px; width:12px; height:12px; background:var(--surface); border-right:2px solid var(--line); border-bottom:2px solid var(--line); transform:rotate(45deg)}
+@media (max-width:700px){.corner-face{width:88px; height:96px; padding:5px 5px 13px} .corner-say{font-size:13.5px}}
+body{padding-block:24px 150px}
+.prof-face{width:92px; height:98px}
 </style>
 
 <div class="shell">
@@ -187,6 +200,7 @@ button{font-family:inherit}
   </section>
   <nav class="rail" id="rail" role="tablist" aria-label="Topics"></nav>
   <main id="stage"></main>
+  <div class="corner" id="corner"><div class="corner-say" id="cornerSay" hidden></div><button type="button" class="corner-face" id="cornerFace" aria-label="Professor Wei"></button></div>
 </div>
 
 <script>
@@ -984,14 +998,20 @@ function genEV(){
 }
 
 /* ---- continuous joint pdf: marginals, probabilities, conditioning ---- */
+function wrapLines(ctx,txt,maxW,size){
+  ctx.font='500 '+size+'px '+MONO;
+  var words=txt.split(' '),lines=[],cur='';
+  words.forEach(function(w){var t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;}else cur=t;});
+  if(cur)lines.push(cur);return lines;
+}
 function drawJpdf(ctx,W,H,s,C,q){
-  var a=q.a,b=q.b,P=plot(W,H,{x0:0,x1:a,y0:0,y1:b,l:34,r:64,t:76,b:34});
+  var a=q.a,b=q.b,P=plot(W,H,{x0:0,x1:a,y0:0,y1:b,l:34,r:64,t:124,b:34});
   var nx=44,ny=30,i,j;
   for(i=0;i<nx;i++)for(j=0;j<ny;j++){
     var x=(i+0.5)/nx*a,y=(j+0.5)/ny*b;if(!q.inside(x,y))continue;
     var X0=P.X(i/nx*a),X1=P.X((i+1)/nx*a),Y1=P.Y(j/ny*b),Y0=P.Y((j+1)/ny*b);
     ctx.fillStyle=C.a('accent',0.12+0.6*q.f(x,y)/q.fmax);ctx.fillRect(X0,Y0,X1-X0+0.6,Y1-Y0+0.6);
-    if(s>=3&&q.region(x,y)){ctx.fillStyle=C.a('good',0.4);ctx.fillRect(X0,Y0,X1-X0+0.6,Y1-Y0+0.6);}
+    if(s>=3&&q.region(x,y)){ctx.fillStyle=C.a('good',0.42);ctx.fillRect(X0,Y0,X1-X0+0.6,Y1-Y0+0.6);}
   }
   ctx.save();ctx.strokeStyle=C.ink3;ctx.lineWidth=1.2;ctx.beginPath();
   if(q.tri){ctx.moveTo(P.X(0),P.Y(0));ctx.lineTo(P.X(a),P.Y(0));ctx.lineTo(P.X(a),P.Y(b));ctx.closePath();}
@@ -1000,22 +1020,56 @@ function drawJpdf(ctx,W,H,s,C,q){
   axisX(ctx,P,C,niceTicks(0,a,5));
   niceTicks(0,b,4).forEach(function(v){T(ctx,nz(v),P.l-6,P.Y(v)+4,C.ink3,10.5,'right');});
   T(ctx,'x',P.W-P.r+6,P.Y(0)+4,C.ink3,11,'left',600);T(ctx,'y',P.l-6,P.t-4,C.ink3,11,'right',600);
+  var mx=0,my=0;for(i=0;i<=60;i++){mx=Math.max(mx,q.fX(a*i/60));my=Math.max(my,q.fY(b*i/60));}
+  var topY=function(xx){return P.t-8-q.fX(xx)/mx*32;},rightX=function(yy){return P.W-P.r+8+q.fY(yy)/my*46;};
   if(s>=2){
-    var mx=0,my=0;for(i=0;i<=60;i++){mx=Math.max(mx,q.fX(a*i/60));my=Math.max(my,q.fY(b*i/60));}
-    ctx.save();ctx.strokeStyle=C.sky;ctx.lineWidth=2;ctx.beginPath();
-    for(i=0;i<=60;i++){var xx=a*i/60,yy=P.t-6-q.fX(xx)/mx*30;if(i)ctx.lineTo(P.X(xx),yy);else ctx.moveTo(P.X(xx),yy);}
-    ctx.stroke();ctx.beginPath();
-    for(j=0;j<=60;j++){var y2=b*j/60,x2=P.W-P.r+8+q.fY(y2)/my*46;if(j)ctx.lineTo(x2,P.Y(y2));else ctx.moveTo(x2,P.Y(y2));}
-    ctx.stroke();ctx.restore();
+    ctx.save();ctx.strokeStyle=C.sky;ctx.fillStyle=C.a('sky',0.18);ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(P.X(0),P.t-8);for(i=0;i<=60;i++){var xx=a*i/60;ctx.lineTo(P.X(xx),topY(xx));}ctx.lineTo(P.X(a),P.t-8);ctx.closePath();ctx.fill();
+    ctx.beginPath();for(i=0;i<=60;i++){var xq=a*i/60;if(i)ctx.lineTo(P.X(xq),topY(xq));else ctx.moveTo(P.X(xq),topY(xq));}ctx.stroke();
+    ctx.beginPath();ctx.moveTo(P.W-P.r+8,P.Y(0));for(j=0;j<=60;j++){var yv=b*j/60;ctx.lineTo(rightX(yv),P.Y(yv));}ctx.lineTo(P.W-P.r+8,P.Y(b));ctx.closePath();ctx.fill();
+    ctx.beginPath();for(j=0;j<=60;j++){var yq=b*j/60;if(j)ctx.lineTo(rightX(yq),P.Y(yq));else ctx.moveTo(rightX(yq),P.Y(yq));}ctx.stroke();
+    ctx.restore();
+    T(ctx,'f_X(x)',P.X(a),P.t-44,C.sky,11,'right',700);T(ctx,'f_Y(y)',P.W-P.r+8,P.t-8,C.sky,11,'left',700);
   }
-  if(s>=4&&q.y0!==undefined){ctx.save();ctx.strokeStyle=C.warn;ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(P.X(0),P.Y(q.y0));ctx.lineTo(P.X(a),P.Y(q.y0));ctx.stroke();ctx.restore();TB(ctx,C,'y = '+nz(q.y0),P.X(0)+4,P.Y(q.y0)-5,C.warn,10.5,'left',600);}
-  if(s>=5){ctx.save();ctx.strokeStyle=C.good;ctx.lineWidth=2;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(P.X(q.EX),P.Y(0));ctx.lineTo(P.X(q.EX),P.Y(b));ctx.stroke();ctx.restore();TB(ctx,C,'E(X)',P.X(q.EX),P.t+12,C.good,11,'center',700);}
+  if(s===2){
+    var x1=a*0.62,bw=a/34,top1=q.tri?x1:b,y1=b*0.4,bh=b/24,left1=q.tri?y1:0;
+    ctx.save();ctx.fillStyle=C.a('warn',0.5);
+    ctx.fillRect(P.X(x1-bw/2),P.Y(top1),P.X(x1+bw/2)-P.X(x1-bw/2),P.Y(0)-P.Y(top1));
+    ctx.fillRect(P.X(left1),P.Y(y1+bh/2),P.X(a)-P.X(left1),P.Y(y1-bh/2)-P.Y(y1+bh/2));
+    ctx.strokeStyle=C.warn;ctx.lineWidth=1.6;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(P.X(x1),P.Y(top1));ctx.lineTo(P.X(x1),topY(x1));ctx.moveTo(P.X(a),P.Y(y1));ctx.lineTo(rightX(y1),P.Y(y1));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.warn;ctx.beginPath();ctx.arc(P.X(x1),topY(x1),4,0,7);ctx.fill();ctx.beginPath();ctx.arc(rightX(y1),P.Y(y1),4,0,7);ctx.fill();
+    ctx.restore();
+    TB(ctx,C,'strip → one point of f_X',P.X(x1)+8,P.Y(b*0.1),C.warn,10.5,'left',700);
+    TB(ctx,C,'strip → one point of f_Y',P.X(left1)+6,P.Y(y1)-9,C.warn,10.5,'left',700);
+  }
+  if(s>=3)TB(ctx,C,'P = volume here',P.X(q.rc.x),P.Y(q.rc.y)+4,C.good,11,'center',700);
+  if(s>=4&&q.y0!==undefined){
+    var mv=0;for(i=0;i<=80;i++){var xs=a*i/80;mv=Math.max(mv,q.inside(xs,q.y0)?q.f(xs,q.y0):0);}
+    ctx.save();ctx.strokeStyle=C.warn;ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(P.X(0),P.Y(q.y0));ctx.lineTo(P.X(a),P.Y(q.y0));ctx.stroke();ctx.setLineDash([]);
+    var cy=function(xs){return P.Y(q.y0)-(q.inside(xs,q.y0)?q.f(xs,q.y0):0)/mv*34;};
+    ctx.fillStyle=C.a('warn',0.45);ctx.beginPath();ctx.moveTo(P.X(0),P.Y(q.y0));for(i=0;i<=80;i++){var xf=Math.min(a*i/80,q.s0);ctx.lineTo(P.X(xf),cy(xf));if(a*i/80>=q.s0)break;}ctx.lineTo(P.X(q.s0),P.Y(q.y0));ctx.closePath();ctx.fill();
+    ctx.lineWidth=2.4;ctx.beginPath();for(i=0;i<=80;i++){var xc=a*i/80;if(i)ctx.lineTo(P.X(xc),cy(xc));else ctx.moveTo(P.X(xc),cy(xc));}ctx.stroke();
+    ctx.restore();
+    TB(ctx,C,'y = '+nz(q.y0),P.X(0)+4,P.Y(q.y0)+14,C.warn,10.5,'left',700);
+    TB(ctx,C,'pdf along the line',P.X(a)-4,P.Y(q.y0)-40,C.warn,10.5,'right',700);
+  }
+  if(s>=5){
+    ctx.save();ctx.strokeStyle=C.good;ctx.lineWidth=3;ctx.beginPath();
+    for(j=0;j<=40;j++){var ym=b*j/40,xm=q.mX(ym);if(j)ctx.lineTo(P.X(xm),P.Y(ym));else ctx.moveTo(P.X(xm),P.Y(ym));}
+    ctx.stroke();ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(P.X(q.EX),P.Y(0));ctx.lineTo(P.X(q.EX),P.Y(b));ctx.stroke();ctx.restore();
+    TB(ctx,C,'E(X | Y = y)',P.X(q.mX(b*0.55))-8,P.Y(b*0.55)+4,C.good,10.5,'right',700);
+    TB(ctx,C,'E(X)',P.X(q.EX),P.t+12,C.good,11,'center',700);
+  }
   T(ctx,q.fl,P.l+2,17,C.ink2,12,'left',600);
   if(s>=1)T(ctx,'c = '+fx(q.c,4),W-P.r,17,C.accent,13,'right',700);
   if(q.res[s])T(ctx,q.res[s],P.l+2,36,s>=6?(q.indep?C.good:C.bad):C.accent,12,'left',700);
+  var cap=q.cap[s];
+  if(cap){wrapLines(ctx,cap,W-24,11).slice(0,3).forEach(function(ln,k){T(ctx,ln,12,54+k*14,C.ink2,11,'left',500);});}
 }
 function genJpdf(){
   var fam=pick(['sum','prod','tri']),a,b,c,f,inside,fX,fY,fl,dom,s0,t0,y0,Pst,cond,EX,region,fmax,tri=false,evTxt,res,steps,indep;
+  var N=function(v){return nz(rd(v,4));};
   if(fam==='tri'){
     var B=pick([1,2,3,4]);a=B;b=B;c=2/(B*B);tri=true;
     s0=rd(B*pick([0.75,0.9]),2);y0=rd(B*pick([0.25,0.5]),2);
@@ -1026,12 +1080,12 @@ function genJpdf(){
     fl='f(x, y) = c on 0 < y < x < '+B;dom='the triangle 0 < y < x < '+B;
     evTxt='P(X < '+nz(s0)+')';
     steps=[
-      S('Normalize over the triangle','The support is the triangle 0 < y < x < '+B+', whose area is '+B+'²/2. A constant pdf times its area must equal 1.','c·'+B+'²/2 = 1','c = 2/'+B*B+' = '+fx(c,4)),
-      S('Marginals: watch the limits','For a fixed x, y runs from 0 up to the diagonal y = x. For a fixed y, x runs from y across to '+B+'.','f_X(x) = ∫₀^x c dy = c·x = '+fx(c,4)+'x   (0 < x < '+B+')\nf_Y(y) = ∫_y^'+B+' c dx = c('+B+' − y)   (0 < y < '+B+')'),
-      S('Probability from the marginal','P(X < s) only needs f_X, so integrate it from 0 to s (green).','P(X < '+nz(s0)+') = ∫₀^'+nz(s0)+' c·x dx = c·'+nz(s0)+'²/2 = '+nz(s0)+'²/'+B+'²','P = '+fx(Pst,4)),
-      S('Conditional pdf','Fix y = '+nz(y0)+' (dashed line). Along it the pdf is constant, so X is uniform on ('+nz(y0)+', '+B+').','f(x | Y = '+nz(y0)+') = c / f_Y('+nz(y0)+') = 1/('+B+' − '+nz(y0)+') on ('+nz(y0)+', '+B+')\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ('+nz(s0)+' − '+nz(y0)+')/('+B+' − '+nz(y0)+')','P = '+fx(cond,4)),
-      S('Expectation by conditioning','E(X) = E[ E(X | Y) ]. A uniform on (y, '+B+') has mean (y + '+B+')/2, which is then averaged over f_Y.','E(X | Y = y) = (y + '+B+')/2\nE(X) = ∫₀^'+B+' ((y + '+B+')/2)·c('+B+' − y) dy = 2·'+B+'/3\nCheck: ∫ x·f_X(x) dx gives the same.','E(X) = '+fx(EX,4)),
-      S('Independence','Independent variables need a rectangular support. Here f = 0 when y > x, yet f_X(x)f_Y(y) > 0 there, so the product rule fails.','','Not independent','bad')
+      S('Find c: probability = c × area','The pdf is the same number c everywhere on the triangle, so the total probability is c times the triangle’s area. That total must be 1.','Triangle 0 < y < x < '+B+' has base '+B+' and height '+B+'\nArea = ½ × '+B+' × '+B+' = '+N(B*B/2)+'\nc × '+N(B*B/2)+' = 1','c = 1/'+N(B*B/2)+' = '+fx(c,4)),
+      S('Marginals: add up one slice at a time','For f_X(x), slice vertically: at a fixed x, y runs from 0 up to the diagonal y = x. For f_Y(y), slice horizontally: at a fixed y, x runs from y across to '+B+'.','f_X(x) = ∫₀^x c dy = c·x = '+fx(c,4)+'x   (0 < x < '+B+')\nf_Y(y) = ∫_y^'+B+' c dx = c('+B+' − y)   (0 < y < '+B+')'),
+      S('Probability from the marginal','P(X < s) only involves X, so integrate f_X from 0 to s. That is the green area.','P(X < '+nz(s0)+') = ∫₀^'+nz(s0)+' c·x dx = c·'+nz(s0)+'²/2\n = ('+fx(c,4)+')('+N(s0*s0)+')/2','P = '+fx(Pst,4)),
+      S('Conditional: slide along the dashed line','Given Y = '+nz(y0)+' we only look along the dashed line. The pdf there is constant, so X is spread evenly from '+nz(y0)+' to '+B+'.','f(x | Y = '+nz(y0)+') = f(x, '+nz(y0)+') / f_Y('+nz(y0)+') = c / (c·('+B+' − '+nz(y0)+')) = 1/'+N(B-y0)+'   for '+nz(y0)+' < x < '+B+'\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ('+nz(s0)+' − '+nz(y0)+') × 1/'+N(B-y0),'P = '+fx(cond,4)),
+      S('Expectation by conditioning: E(X) = E[E(X | Y)]','Step A: given Y = y, X is uniform on (y, '+B+'), so its average is the midpoint. Step B: average that over y using f_Y. The direct integral of x·f_X(x) gives the same answer.','Step A:  E(X | Y = y) = (y + '+B+')/2\nStep B:  E(X) = ∫₀^'+B+' ((y + '+B+')/2)·c('+B+' − y) dy = (1/'+N(B*B/2)+')·... = 2·'+B+'/3\nCheck:  ∫₀^'+B+' x·(c·x) dx = c·'+B+'³/3 = 2·'+B+'/3','E(X) = '+fx(EX,4)),
+      S('Independence','Independent variables need a rectangular support. Here f = 0 when y > x, yet f_X(x)·f_Y(y) > 0 there, so the product rule fails.','','Not independent','bad')
     ];
     res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)','P(X < '+nz(s0)+') = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'not independent'];
   } else {
@@ -1040,18 +1094,19 @@ function genJpdf(){
     region=function(x,y){return x<s0&&y<t0;};evTxt='P(X < '+nz(s0)+', Y < '+nz(t0)+')';
     dom='0 ≤ x ≤ '+a+', 0 ≤ y ≤ '+b;
     if(fam==='sum'){
+      var den=a*a/2+a*y0,tot=a*b*(a+b)/2;
       c=2/(a*b*(a+b));f=function(x,y){return c*(x+y);};inside=function(){return true;};
       fX=function(x){return c*(b*x+b*b/2);};fY=function(y){return c*(a*a/2+a*y);};
-      Pst=c*(s0*s0*t0/2+s0*t0*t0/2);var den=a*a/2+a*y0;cond=(s0*s0/2+y0*s0)/den;
+      Pst=c*(s0*s0*t0/2+s0*t0*t0/2);cond=(s0*s0/2+y0*s0)/den;
       EX=c*(a*a*a*b/3+a*a*b*b/4);indep=false;fmax=c*(a+b);fl='f(x, y) = c(x + y)';
       var fa=f(a/2,b/2),fp=fX(a/2)*fY(b/2);
       steps=[
-        S('Normalize over the rectangle','The total volume under the surface must be 1.','∫₀^'+b+' ∫₀^'+a+' c(x + y) dx dy = c·'+a+'·'+b+'·'+(a+b)+'/2 = 1','c = 2/'+a*b*(a+b)+' = '+fx(c,4)),
-        S('Marginals: integrate out the other variable','f_X(x) = ∫ f(x, y) dy over y, and f_Y(y) = ∫ f(x, y) dx over x.','f_X(x) = ∫₀^'+b+' c(x + y) dy = '+fx(c*b,4)+'x + '+fx(c*b*b/2,4)+'   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c(x + y) dx = '+fx(c*a*a/2,4)+' + '+fx(c*a,4)+'y   (0 ≤ y ≤ '+b+')'),
-        S('Probability over a region','Integrate the pdf over the region (green).',evTxt+' = ∫₀^'+nz(s0)+' ∫₀^'+nz(t0)+' c(x + y) dy dx = c('+nz(s0)+'²·'+nz(t0)+'/2 + '+nz(s0)+'·'+nz(t0)+'²/2)','P = '+fx(Pst,4)),
-        S('Conditional pdf','f(x | y) = f(x, y)/f_Y(y). Fix y = '+nz(y0)+' (dashed line), then integrate over x.','f(x | Y = '+nz(y0)+') = (x + '+nz(y0)+')/'+nz(rd(den,4))+'\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ('+nz(s0)+'²/2 + '+nz(y0)+'·'+nz(s0)+')/'+nz(rd(den,4)),'P = '+fx(cond,4)),
-        S('Expectation by conditioning','E(X) = E[ E(X | Y) ]. First E(X | Y = y) = ∫ x f(x | y) dx, then average over f_Y.','E(X | Y = y) = ('+nz(rd(a*a*a/3,4))+' + '+nz(rd(a*a/2,4))+'y)/('+nz(rd(a*a/2,4))+' + '+a+'y)\nE(X) = ∫₀^'+b+' E(X | Y = y) f_Y(y) dy = c('+a+'³·'+b+'/3 + '+a+'²·'+b+'²/4)\nCheck: ∫ x·f_X(x) dx gives the same.','E(X) = '+fx(EX,4)),
-        S('Independence','Independent variables need f(x, y) = f_X(x)f_Y(y) everywhere. One failing point is enough.','At ('+nz(a/2)+', '+nz(b/2)+'):  f = '+fx(fa,4)+'  but  f_X·f_Y = '+fx(fp,4),'Not independent','bad')
+        S('Find c: the total volume must be 1','f(x, y) is a surface above the rectangle. The probability of landing anywhere is the whole volume under it, so it must equal 1. Add it up in two passes: first along x, then along y.','Pass 1 (over x, y held fixed):  ∫₀^'+a+' (x + y) dx = '+N(a*a/2)+' + '+a+'y\nPass 2 (over y):  ∫₀^'+b+' ('+N(a*a/2)+' + '+a+'y) dy = '+N(a*a/2*b)+' + '+N(a*b*b/2)+' = '+N(tot)+'\nSo  c × '+N(tot)+' = 1','c = 1/'+N(tot)+' = '+fx(c,4)),
+        S('Marginals: squash the surface onto one axis','The marginal of X ignores Y: for each x, add up f(x, y) over every possible y. The marginal of Y does the same over x.','f_X(x) = ∫₀^'+b+' c(x + y) dy = c('+b+'x + '+N(b*b/2)+') = '+fx(c*b,4)+'x + '+fx(c*b*b/2,4)+'   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c(x + y) dx = c('+N(a*a/2)+' + '+a+'y) = '+fx(c*a*a/2,4)+' + '+fx(c*a,4)+'y   (0 ≤ y ≤ '+b+')'),
+        S('Probability over a region: integrate over just that region',evTxt+' is the volume above the green rectangle, so integrate x from 0 to '+nz(s0)+' and y from 0 to '+nz(t0)+'.','Pass 1 (over y):  ∫₀^'+nz(t0)+' c(x + y) dy = c('+nz(t0)+'x + '+N(t0*t0/2)+')\nPass 2 (over x):  ∫₀^'+nz(s0)+' c('+nz(t0)+'x + '+N(t0*t0/2)+') dx = c('+N(t0*s0*s0/2)+' + '+N(s0*t0*t0/2)+')','P = '+fx(Pst,4)),
+        S('Conditional pdf: slide along the dashed line, then rescale','Given Y = '+nz(y0)+' we only look along the dashed line. The pdf there, f(x, '+nz(y0)+'), does not add up to 1 by itself. Dividing by f_Y('+nz(y0)+'), the total along the line, fixes that.','f(x | Y = '+nz(y0)+') = f(x, '+nz(y0)+') / f_Y('+nz(y0)+') = (x + '+nz(y0)+')/'+N(den)+'\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ∫₀^'+nz(s0)+' (x + '+nz(y0)+')/'+N(den)+' dx = ('+N(s0*s0/2)+' + '+N(y0*s0)+')/'+N(den),'P = '+fx(cond,4)),
+        S('Expectation by conditioning: E(X) = E[E(X | Y)]','Step A: find the average of X for one fixed y. Step B: average those averages over y using f_Y. The answer matches the direct integral of x·f_X(x), which makes a good check.','Step A:  E(X | Y = y) = ∫₀^'+a+' x(x + y)/('+N(a*a/2)+' + '+a+'y) dx = ('+N(a*a*a/3)+' + '+N(a*a/2)+'y)/('+N(a*a/2)+' + '+a+'y)\nStep B:  E(X) = ∫₀^'+b+' E(X | Y = y)·f_Y(y) dy = c('+N(a*a*a*b/3)+' + '+N(a*a*b*b/4)+')\nCheck:  ∫₀^'+a+' x·f_X(x) dx gives the same value','E(X) = '+fx(EX,4)),
+        S('Independence','Independent variables need f(x, y) = f_X(x)·f_Y(y) everywhere. One failing point is enough.','At ('+nz(a/2)+', '+nz(b/2)+'):  f = '+fx(fa,4)+'  but  f_X·f_Y = '+fx(fp,4),'Not independent','bad')
       ];
       res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)',evTxt+' = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'not independent'];
     } else {
@@ -1059,22 +1114,25 @@ function genJpdf(){
       fX=function(x){return 2*x/(a*a);};fY=function(y){return 2*y/(b*b);};
       Pst=(s0/a)*(s0/a)*(t0/b)*(t0/b);cond=(s0/a)*(s0/a);EX=2*a/3;indep=true;fmax=c*a*b;fl='f(x, y) = c·x·y';
       steps=[
-        S('Normalize over the rectangle','The pdf factors into an x part and a y part, so the double integral is a product.','∫₀^'+b+' ∫₀^'+a+' c·x·y dx dy = c·('+a+'²/2)('+b+'²/2) = 1','c = 4/'+(a*a*b*b)+' = '+fx(c,4)),
-        S('Marginals: integrate out the other variable','Each marginal keeps only its own factor, normalized.','f_X(x) = ∫₀^'+b+' c·x·y dy = c·x·'+b+'²/2 = 2x/'+a*a+'   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c·x·y dx = 2y/'+b*b+'   (0 ≤ y ≤ '+b+')'),
-        S('Probability over a region','Integrate over the region (green). Because the pdf factors, so does the probability.',evTxt+' = c·('+nz(s0)+'²/2)('+nz(t0)+'²/2) = ('+nz(s0)+'/'+a+')²('+nz(t0)+'/'+b+')²','P = '+fx(Pst,4)),
-        S('Conditional pdf','f(x | y) = f(x, y)/f_Y(y). The y cancels, so conditioning on Y changes nothing.','f(x | Y = '+nz(y0)+') = 2x/'+a*a+' = f_X(x)\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+nz(s0)+'²/'+a+'²','P = '+fx(cond,4)),
-        S('Expectation by conditioning','E(X | Y = y) = ∫ x·2x/'+a*a+' dx = 2·'+a+'/3 for every y, so averaging over Y leaves it unchanged.','E(X) = E[ E(X | Y) ] = 2·'+a+'/3','E(X) = '+fx(EX,4)),
-        S('Independence','The pdf equals f_X(x)·f_Y(y) on a rectangle, so the variables are independent.','c·x·y = (2x/'+a*a+')(2y/'+b*b+')','Independent','good')
+        S('Find c: the pdf splits into an x part and a y part','Because f = c·x·y is a function of x times a function of y, the double integral is just two single integrals multiplied together.','∫₀^'+a+' x dx = '+N(a*a/2)+'        ∫₀^'+b+' y dy = '+N(b*b/2)+'\nc × '+N(a*a/2)+' × '+N(b*b/2)+' = 1','c = 1/('+N(a*a/2)+' × '+N(b*b/2)+') = '+fx(c,4)),
+        S('Marginals: keep the factor of the variable you keep','To get f_X, add up over y: the y factor just integrates to a constant. Same idea for f_Y.','f_X(x) = ∫₀^'+b+' c·x·y dy = c·x·'+N(b*b/2)+' = '+fx(2/(a*a),4)+'x   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c·x·y dx = c·y·'+N(a*a/2)+' = '+fx(2/(b*b),4)+'y   (0 ≤ y ≤ '+b+')'),
+        S('Probability over a region: it splits too','The region is a rectangle and the pdf is a product, so the probability is a product as well.',evTxt+' = c × ∫₀^'+nz(s0)+' x dx × ∫₀^'+nz(t0)+' y dy = c × '+N(s0*s0/2)+' × '+N(t0*t0/2),'P = '+fx(Pst,4)),
+        S('Conditional pdf: the y cancels','f(x | y) = f(x, y)/f_Y(y) = c·x·y/('+fx(2/(b*b),4)+'y). The y cancels, so conditioning on Y changes nothing.','f(x | Y = '+nz(y0)+') = '+fx(2/(a*a),4)+'x = f_X(x)\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ∫₀^'+nz(s0)+' '+fx(2/(a*a),4)+'x dx = '+nz(s0)+'²/'+a+'²','P = '+fx(cond,4)),
+        S('Expectation by conditioning: E(X) = E[E(X | Y)]','The conditional pdf does not depend on y, so the conditional average is the same for every y. Averaging a constant leaves it unchanged.','E(X | Y = y) = ∫₀^'+a+' x·'+fx(2/(a*a),4)+'x dx = 2·'+a+'/3\nE(X) = E[E(X | Y)] = 2·'+a+'/3','E(X) = '+fx(EX,4)),
+        S('Independence','The pdf equals f_X(x)·f_Y(y) on a rectangle, so the variables are independent.','c·x·y = ('+fx(2/(a*a),4)+'x)('+fx(2/(b*b),4)+'y)','Independent','good')
       ];
       res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)',evTxt+' = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'independent'];
     }
   }
-  var evMore=fam==='tri'?'':'';
+  var mX=fam==='sum'?function(y){return (a*a*a/3+y*a*a/2)/(a*a/2+a*y);}:fam==='prod'?function(){return 2*a/3;}:function(y){return (y+a)/2;};
+  var rc=fam==='tri'?{x:s0*0.75,y:s0*0.25}:{x:s0/2,y:t0/2};
+  var cap=['','Darker means more probability. The whole volume under the surface is 1.','Add up one strip at a time. Each vertical strip becomes one point of f_X (top curve), each horizontal strip one point of f_Y (right curve).','The green region is the event. Its probability is the volume above it.','We only look along the dashed line. The orange curve is the pdf along that line, rescaled so it adds to 1. The shaded part is the probability.','The green line is the average of X for each y. Averaging that line over y gives E(X) (the dashed vertical line).',indep?'The surface is exactly f_X × f_Y, so X and Y are independent.':'If X and Y were independent, the surface would equal f_X × f_Y everywhere. It does not.'];
   return {
+    tall:true,
     text:'The joint pdf of (X, Y) is '+fl+' for '+dom+', and 0 elsewhere. Find c, the marginal pdfs, '+evTxt+', P(X < '+nz(s0)+' | Y = '+nz(y0)+'), and E(X) using E(X) = E[E(X | Y)]. Are X and Y independent?',
     pills:[fl,dom],
     steps:steps,
-    draw:function(ctx,W,H,s,C){drawJpdf(ctx,W,H,s,C,{a:a,b:b,c:c,f:f,inside:inside,fmax:fmax,fX:fX,fY:fY,region:region,tri:tri,y0:y0,EX:EX,res:res,fl:fl,indep:indep});},
+    draw:function(ctx,W,H,s,C){drawJpdf(ctx,W,H,s,C,{a:a,b:b,c:c,f:f,inside:inside,fmax:fmax,fX:fX,fY:fY,region:region,tri:tri,y0:y0,EX:EX,res:res,fl:fl,indep:indep,mX:mX,rc:rc,cap:cap,s0:s0});},
     chk:{a:a,b:b,c:c,f:f,inside:inside,fX:fX,fY:fY,s0:s0,t0:t0,y0:y0,Pst:Pst,cond:cond,EX:EX,tri:tri}
   };
 }
@@ -1896,10 +1954,17 @@ function profSVG(m){
   if(m===4)s+='<ellipse cx="28" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><ellipse cx="68" cy="58" rx="2" ry="3.2" fill="#7cc7f5"/><path d="M8 14 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#ffd166"/><path d="M86 10 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z" fill="#ffd166"/>';
   return s+'</svg>';
 }
+function showCorner(line,ms){
+  var cs=document.getElementById('cornerSay');if(!cs)return;
+  cs.textContent=line;cs.hidden=false;
+  clearTimeout(showCorner.t);showCorner.t=setTimeout(function(){cs.hidden=true;},ms||7000);
+}
 function renderProf(line,pop){
   var l=profLevel(PROF.pts),face=document.getElementById('profFace'),next=PROF_AT[l+1],name=profSad?'Disappointed':PROF_MOODS[l];
   face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Professor Wei, mood: '+name);
   document.getElementById('profSay').textContent=line;
+  var cf=document.getElementById('cornerFace');if(cf){cf.innerHTML=profSVG(profSad?-1:l)+'<span class="corner-meter"><i style="width:'+PROF.pts+'%"></i></span>';cf.setAttribute('aria-label','Professor Wei, mood '+name+', '+PROF.pts+' out of 100');}
+  if(pop)showCorner(line);
   document.getElementById('profMood').textContent=name+' · mood '+PROF.pts+'/100 · '+PROF.total+' solved';
   document.getElementById('profBar').style.width=PROF.pts+'%';
   if(pop){face.classList.remove('pop');void face.offsetWidth;face.classList.add('pop');}
@@ -1916,6 +1981,8 @@ document.getElementById('profReset').onclick=function(){
   profArm=0;PROF={pts:0,total:0,last:profToday()};profSad=false;profSave();b.textContent='Reset';renderProf('Fresh start. Let’s see what you can do.',true);
 };
 renderProf(profGreeting,false);
+showCorner(profGreeting,6500);
+(function(){var cf=document.getElementById('cornerFace');if(cf)cf.onclick=function(){showCorner(document.getElementById('profSay').textContent+'  (mood '+PROF.pts+'/100)',6500);};})();
 
 /* ================= UI ================= */
 var rail=document.getElementById('rail'),stage=document.getElementById('stage');
@@ -1981,7 +2048,7 @@ function applyStep(scroll){
 }
 function draw(){
   if(!state.q||!el.cv)return;
-  var cv=el.cv,w=Math.max(280,cv.clientWidth||cv.parentNode.clientWidth||600),h=Math.max(230,Math.min(340,Math.round(w*0.56)));
+  var cv=el.cv,w=Math.max(280,cv.clientWidth||cv.parentNode.clientWidth||600),h=(state.q&&state.q.tall)?Math.max(330,Math.min(450,Math.round(w*0.9))):Math.max(230,Math.min(340,Math.round(w*0.56)));
   var dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.height=h+'px';
   var ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
