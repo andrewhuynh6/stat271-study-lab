@@ -221,6 +221,7 @@ body{font-size:17px; padding-left:max(20px,env(safe-area-inset-left,0px)); paddi
 
 .fine{font-size:12.5px}
 .hero h1{font-size:clamp(40px,6vw,76px)} .hero p{font-size:clamp(17px,2vw,22px)}
+.easy-leg{margin-top:8px; font-size:14px; color:var(--ink-3)}
 .easy-note{background:var(--surface-2); border:2px dashed var(--edge); border-radius:12px; padding:12px 16px; font-size:17px; margin-bottom:14px}
 .btn[aria-pressed="true"]{background:#FFC53D; color:#111!important}
 .hero .btn + .btn{margin-left:8px}
@@ -502,7 +503,7 @@ function genTransform(){
   var ym=f(mean),ysd=rd(Math.abs(b)*sd,3),iqx=q3-q1,iqy=rd(Math.abs(b)*iqx,3);
   var yform=nz(a)+' '+(b<0?'−':'+')+' '+nz(Math.abs(b))+'x';
   return {
-    story:'You have a list of numbers x. Their average is '+nz(mean)+', their typical wobble (SD) is '+nz(sd)+', and the five-number summary is ('+five.join(', ')+'). Now every number is changed to y = '+yform+' (think: switching units, then adding a bonus). What are the new average, wobble (SD), IQR and five-number summary?',
+    story:'You have a list of old numbers. Their average is '+nz(mean)+', their typical wobble (SD) is '+nz(sd)+', and the five-number summary is ('+five.join(', ')+'). Now every old number is turned into a new number with: new = '+yform.replace(/x/g,'·old')+' (think: switching units, then adding a bonus). What are the new average, wobble (SD), IQR and five-number summary?',
     text:'A data set x has mean '+nz(mean)+', standard deviation '+nz(sd)+' and five-number summary ('+five.join(', ')+'). Let y = '+yform+'. Find the mean, SD, IQR and five-number summary of y.',
     pills:['mean '+nz(mean),'s = '+nz(sd),'IQR = '+iqx,'b = '+nz(b)],
     steps:[
@@ -896,7 +897,7 @@ function genJoint(){
   var shown=p.map(function(r,i){return r.map(function(v,j){return (i===hi&&j===hj)?'c':fx(v,2);}).join('  ');});
   var others=[];for(var a3=0;a3<3;a3++)for(var b3=0;b3<3;b3++)if(!(a3===hi&&b3===hj))others.push(p[a3][b3]);
   return {
-    story:'A ball lands on a small grid. The table says how likely each spot is, where X is how far right and Y is how far back, but one spot’s chance is hidden as c. Find c, the chance for each column and each row, the average right and back, how much right and back move together (Cov), whether right and back ignore each other (independent), and the chance that back is 3 when right is at least 1.',
+    story:'A ball lands on a small grid. The table says how likely each spot is, by how far right and how far back it lands, but one spot’s chance is hidden as c. Find c, the chance for each column and each row, the average right and back, how much right and back move together (Cov), whether right and back ignore each other (independent), and the chance that back is 3 when right is at least 1.',
     text:'The table gives the joint pmf of (X, Y); one entry is hidden as c. Find c, the marginals, E(X), E(Y), Cov(X, Y), decide if X and Y are independent, and find P(Y = 3 | X ≥ 1).',
     pills:['x ∈ {0,1,2}','y ∈ {1,2,3}','c at x='+xs[hi]+', y='+ys[hj]],
     steps:[
@@ -960,7 +961,7 @@ function genIterBin(){
 function genIterPE(){
   var lam=pick([0.5,1,2]),EX=1/lam,Ew=1/lam,Vb=1/(lam*lam),VX=Ew+Vb;
   return {
-    story:'First a random waiting time Y is drawn (exponential, rate '+lam+'). Then X counts how many events happen, at an average of y events, where y is the time you drew. Find the average and wobble (E and Var) of X.',
+    story:'First a random waiting time Y is drawn (exponential, rate '+lam+'). Then X counts how many events happen, at an average equal to the Y you drew. Find the average and wobble (E and Var) of X.',
     text:'Y is exponential with rate '+lam+'. Given Y = y, X ~ Poisson(y). Find E(X) and Var(X).',
     pills:['Y ~ Exp('+lam+')','X | Y ~ Poisson(Y)'],
     steps:[
@@ -1041,7 +1042,7 @@ function genEV(){
   }
   var Vc=EX2c-EXc*EXc,sdc=Math.sqrt(Vc),ELc=a*EXc+b,VLc=a*a*Vc;
   return {
-    story:'A random amount X follows the curve '+ftxt+' (0 everywhere else), so higher curve means more likely. Find its average E(X) and wobble Var(X), then the same two numbers after changing it to '+lin+'.',
+    story:'A random amount follows the curve '+ftxt+' (0 everywhere else), so higher curve means more likely. Find its average E(X) and wobble Var(X), then the same two numbers after changing it to '+lin+'.',
     text:'A continuous random variable X has pdf '+ftxt+', and 0 elsewhere. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
     pills:[ftxt],
     steps:[
@@ -1187,7 +1188,7 @@ function genJpdf(){
   var cap=['','Darker means more probability. The whole volume under the surface is 1.','Add up one strip at a time. Each vertical strip becomes one point of f_X (top curve), each horizontal strip one point of f_Y (right curve).','The green region is the event. Its probability is the volume above it.','We only look along the dashed line. The orange curve is the pdf along that line, rescaled so it adds to 1. The shaded part is the probability.','The green line is the average of X for each y. Averaging that line over y gives E(X) (the dashed vertical line).',indep?'The surface is exactly f_X × f_Y, so X and Y are independent.':'If X and Y were independent, the surface would equal f_X × f_Y everywhere. It does not.'];
   return {
     tall:true,
-    story:'Drop a ball on a field. The heat map '+fl+' over '+dom+' (nothing outside) says where it tends to land: X is how far right, Y is how far back. Find the scale c that makes the total chance 1, the heat along each side (marginals), '+evTxt+', the chance that right is below '+nz(s0)+' when back is exactly '+nz(y0)+', and the average right using E(X) = E[E(X | Y)]. Do right and back affect each other?',
+    story:'Drop a ball on a field. The heat map '+fl+' over '+dom+' (nothing outside) says where it tends to land, in terms of how far right and how far back. Find the c that makes the total chance 1, the heat along each side (marginals), '+evTxt+', the chance that right is below '+nz(s0)+' when back is exactly '+nz(y0)+', and the average right using E(X) = E[E(X | Y)]. Do right and back affect each other?',
     text:'The joint pdf of (X, Y) is '+fl+' for '+dom+', and 0 elsewhere. Find c, the marginal pdfs, '+evTxt+', P(X < '+nz(s0)+' | Y = '+nz(y0)+'), and E(X) using E(X) = E[E(X | Y)]. Are X and Y independent?',
     pills:[fl,dom],
     steps:steps,
@@ -1311,7 +1312,7 @@ function genCheb(){
       draw:function(ctx,W,H,s,C){drawLLN(ctx,W,H,s,C,{n:n,v:sg*sg,E:E,conf:conf});}};
   }
   var m=pick([20,40,50,100]),tt=m*pick([1.5,2,2.5,3,4]);
-  return {story:'A nonnegative amount X averages '+m+', and that is all you know. What is the largest the chance can be that X goes above '+nz(tt)+'?',
+  return {story:'A nonnegative amount averages '+m+', and that is all you know. What is the largest the chance can be that it goes above '+nz(tt)+'?',
     text:'X is a nonnegative random variable with mean '+m+', and nothing else is known. Find an upper bound for P(X > '+nz(tt)+').',pills:['E(X) = '+m,'t = '+nz(tt)],
     steps:[S('Which inequality?','X cannot be negative and only its mean is known, with no variance, so use Markov. Chebyshev would need a variance.','P(X ≥ t) ≤ E(X)/t'),S('Plug in','','P(X > '+nz(tt)+') ≤ '+m+'/'+nz(tt),'P ≤ '+fx(m/tt,4),'warn')],
     draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:0,x1:tt*1.6,mu:m,muLabel:'E(X) = '+m,marks:[{x:tt,label:'t = '+nz(tt)}],tails:[[tt,tt*2]],tailLabel:'≤ '+fx(m/tt,3),inner:null,th:{mean:1,marks:1,region:2}});}};
@@ -1830,7 +1831,7 @@ function genNormC(){
   var xp=a===1?'x':'x²',form='f(x) = c·'+xp+' on [0, '+b+']';
   var f=function(x){return x>=0&&x<=b?c*Math.pow(x,a):0;};
   return {
-    story:'A random amount X follows the curve '+form+' (0 elsewhere) with an unknown scale c. Find c so the total area is 1, the chance that X lands between '+nz(s0)+' and '+nz(t0)+', and the average E(X).',
+    story:'A random amount follows the curve '+form+' (0 elsewhere) with an unknown constant c. Find c so the total area is 1, the chance that X lands between '+nz(s0)+' and '+nz(t0)+', and the average E(X).',
     text:'A continuous random variable X has pdf '+form+' and is 0 elsewhere. Find c, P('+nz(s0)+' < X < '+nz(t0)+') and E(X).',
     pills:[form,'limits '+nz(s0)+' and '+nz(t0)],
     steps:[
@@ -1985,17 +1986,39 @@ var EASY_NOTE={
 };
 function easyText(s,mid,tid){
   if(!state.easy||!s)return s;
-  var out=String(s).replace(EASY_RE,function(m){
+  var out=String(s).replace(/\brandom variable X\b/g,'random amount').replace(EASY_RE,function(m){
     var r=EASY_MAP[m.toLowerCase()],c=m.charAt(0);
     return (c!==c.toLowerCase())?r.charAt(0).toUpperCase()+r.slice(1):r;
   });
-  if(mid==='joint'&&(tid==='jpdf'||tid==='joint'))out=out.replace(/\bX\b/g,'right').replace(/\bY\b/g,'back');
-  return out;
+  return friendlyVars(out,tid);
+}
+/* Simpler words: replace bare letters (x, y, c) with plain words */
+var FV_RIGHT={X:'right',Y:'back',x:'right',y:'back',c:'scale'};
+var FV_BY={jpdf:FV_RIGHT,joint:FV_RIGHT,varsum:{X:'apples',Y:'oranges'},iter:{X:'amount',Y:'other amount'},
+  normd:{X:'amount',x:'amount',c:'scale'},normc:{X:'amount',x:'amount',c:'scale'},cdfd:{X:'amount',x:'amount'},pdfcdf:{X:'amount',x:'amount'},ev:{X:'amount',x:'amount'},
+  disc:{},chisq:{X:'amount',Y:'other amount'}};
+function fvMap(tid){return FV_BY[tid]||{X:'amount'};}
+function friendlyVars(s,tid){
+  if(!state.easy||!s)return s;
+  var m=fvMap(tid),out=String(s);
+  Object.keys(m).forEach(function(k){
+    var tail='(?![A-Za-z_\\u0300-\\u036f\\u2070-\\u209f])';
+    out=out.replace(new RegExp('(\\d)'+k+tail,'g'),'$1·'+m[k]).replace(new RegExp('\\b'+k+tail,'g'),m[k]);
+  });
+  return out.replace(/scale(?=\()/g,'scale × ');
+}
+function fvLegend(q){
+  var m=fvMap(q.tid),src=(q.text||'')+' '+(q.story||'')+' '+(q.pills||[]).join(' '),g={};
+  Object.keys(m).forEach(function(k){
+    if(new RegExp('\\b'+k+'\\b(?![\\u0300-\\u036f\\u2070-\\u209f])').test(src))(g[m[k]]=g[m[k]]||[]).push(k);
+  });
+  var parts=Object.keys(g).map(function(w){return w+' = '+g[w].join(' or ');});
+  return parts.length?'Words stand in for letters: '+parts.join(', ')+'. Formulas below still use the letters.':'';
 }
 function renderEasyNote(){
   var n=document.getElementById('easyNote'),b=document.getElementById('easyBtn');
   if(b){b.textContent='Simpler words: '+(state.easy?'on':'off');b.setAttribute('aria-pressed',state.easy?'true':'false');}
-  if(n){n.hidden=!state.easy;n.innerHTML=state.easy?'<b>Simpler words.</b> '+H((function(t){return t.charAt(0).toUpperCase()+t.slice(1);})((state.q&&state.q.story)||EASY_NOTE[state.id]||'')):'';}
+  if(n){n.hidden=!state.easy;n.innerHTML=state.easy?'<b>Simpler words.</b> '+H((function(t){return t.charAt(0).toUpperCase()+t.slice(1);})(friendlyVars((state.q&&state.q.story)||EASY_NOTE[state.id]||'',state.q&&state.q.tid)))+(state.q&&fvLegend(state.q)?'<div class="easy-leg">'+H(fvLegend(state.q))+'</div>':''):'';}
 }
 function initEasy(){
   try{state.easy=localStorage.getItem('stat271-easy')==='1';}catch(e){state.easy=false;}
@@ -2055,7 +2078,7 @@ function showQ(){
   var E=function(s){return easyText(s,q.mid,q.tid);};
   el.meta.innerHTML=H(state.metaLabel);
   el.text.innerHTML=H(E(q.text));
-  el.pills.innerHTML=q.pills.map(function(p){return '<span class="pill">'+H(p)+'</span>';}).join('');
+  el.pills.innerHTML=q.pills.map(function(p){return '<span class="pill">'+H(friendlyVars(p,q.tid))+'</span>';}).join('');
   el.cv.setAttribute('aria-label','Diagram for: '+q.text);
   renderEasyNote();
   el.steps.innerHTML=q.steps.map(function(st,i){
