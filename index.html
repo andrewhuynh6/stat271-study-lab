@@ -742,8 +742,9 @@ function drawJoint(ctx,W,H,s,C,q){
   q.xs.forEach(function(x,i){q.ys.forEach(function(y,j){
     var px=x0+cw*j,py=y0+ch*i,v=q.p[i][j],hid=(i===q.hi&&j===q.hj),show=!hid||s>=1;
     ctx.fillStyle=show?C.a('accent',0.08+0.55*(v/mx)):C.a('ink',.05); ctx.fillRect(px+1,py+1,cw-2,ch-2);
-    ctx.strokeStyle=hid&&s<1?C.warn:C.line; ctx.lineWidth=hid&&s<1?2:1; if(hid&&s<1)ctx.setLineDash([4,3]); ctx.strokeRect(px+1,py+1,cw-2,ch-2); ctx.setLineDash([]);
-    var txt=hid&&s<1?'c':fx(v,2); T(ctx,txt,px+cw/2,py+ch/2+(s>=4?-2:5),hid&&s<1?C.warn:C.ink,hid&&s<1?17:(small?13:14),'center',600);
+    ctx.strokeStyle=hid?C.warn:C.line; ctx.lineWidth=hid?2:1; if(hid&&s<1)ctx.setLineDash([4,3]); ctx.strokeRect(px+1,py+1,cw-2,ch-2); ctx.setLineDash([]);
+    var txt=hid&&s<1?'c':fx(v,2); T(ctx,txt,px+cw/2,py+ch/2+(s>=4?-2:5),hid?C.warn:C.ink,hid&&s<1?17:(small?13:14),'center',600);
+    if(hid&&s>=1)T(ctx,'c',px+7,py+13,C.warn,11,'left',700);
     if(s>=4)T(ctx,'xy='+(x*y),px+cw/2,py+ch/2+12,C.ink3,small?9:10,'center',500);
     if(s>=6&&q.cond.cells.some(function(c){return c[0]===i&&c[1]===j;})){ctx.strokeStyle=C.good;ctx.lineWidth=2.5;ctx.strokeRect(px+2,py+2,cw-4,ch-4);}
     if(s>=5&&q.mm&&q.mm[0]===i&&q.mm[1]===j){ctx.strokeStyle=C.bad;ctx.lineWidth=2.5;ctx.strokeRect(px+2,py+2,cw-4,ch-4);}
@@ -1393,10 +1394,124 @@ function genSetup(){
   };
 }
 
+/* ================= MODULE: RANDOM VARIABLES ================= */
+function genNormD(){
+  var n=pick([4,5,6]),mode=pick(['up','down']),w=[];
+  for(var x=1;x<=n;x++)w.push(mode==='up'?x:n+1-x);
+  var tot=sum(w),p=w.map(function(v){return v/tot;}),m=rnd(2,n),ge=Math.random()<0.5;
+  var pr=ge?sum(p.slice(m-1)):sum(p.slice(0,m)),EX=sum(p.map(function(v,i){return (i+1)*v;}));
+  var form=mode==='up'?'p(x) = c·x':'p(x) = c·('+(n+1)+' − x)';
+  var xs=[];for(var i=1;i<=n;i++)xs.push(i);
+  var ev=ge?'P(X ≥ '+m+')':'P(X ≤ '+m+')',used=ge?w.slice(m-1):w.slice(0,m);
+  return {
+    text:'A discrete random variable X takes the values 1, 2, …, '+n+' with pmf '+form+'. Find c, '+ev+' and E(X).',
+    pills:['x = 1, …, '+n,form],
+    steps:[
+      S('Normalize','A pmf must add to 1, so c times the sum of the weights equals 1.','c·('+w.join(' + ')+') = 1  ⇒  c = 1/'+tot,'c = 1/'+tot+' = '+fx(1/tot,4)),
+      S('Fill in the pmf table','Multiply each weight by c.','p(x) = ('+w.map(function(v){return v+'/'+tot;}).join(', ')+')'),
+      S('Add the pmf over the event','Only the values inside the event count.',ev+' = ('+used.join(' + ')+')/'+tot+' = '+fx(pr,4),ev+' = '+fx(pr,4)),
+      S('Expected value','E(X) = Σ x·p(x).','E(X) = ('+w.map(function(v,i){return (i+1)+'×'+v;}).join(' + ')+')/'+tot+' = '+fx(EX,4),'E(X) = '+fx(EX,4))
+    ],
+    draw:function(ctx,W,H,s,C){drawPmf(ctx,W,H,s,C,{xs:xs,pmf:function(x){return p[x-1]||0;},inR:function(x){return ge?x>=m:x<=m;},th:{hi:3,label:3,ov:99,vl:99,shade:99},label:ev+' = '+fx(pr,4),title:form});}
+  };
+}
+function genNormC(){
+  var a=pick([1,2]),b=pick([2,3,4]),c=(a+1)/Math.pow(b,a+1);
+  var s0=rd(b*pick([0.25,0.5]),2),t0=rd(b*pick([0.6,0.75]),2);
+  var P1=Math.pow(t0/b,a+1)-Math.pow(s0/b,a+1),EX=(a+1)/(a+2)*b;
+  var xp=a===1?'x':'x²',form='f(x) = c·'+xp+' on [0, '+b+']';
+  var f=function(x){return x>=0&&x<=b?c*Math.pow(x,a):0;};
+  return {
+    text:'A continuous random variable X has pdf '+form+' and is 0 elsewhere. Find c, P('+nz(s0)+' < X < '+nz(t0)+') and E(X).',
+    pills:[form,'limits '+nz(s0)+' and '+nz(t0)],
+    steps:[
+      S('Normalize','A pdf must integrate to 1 over its support.','∫₀^'+b+' c·'+xp+' dx = c·'+b+'^'+(a+1)+'/'+(a+1)+' = 1','c = '+(a+1)+'/'+Math.pow(b,a+1)+' = '+fx(c,4)),
+      S('Probability is area under the curve','Integrate the pdf between the two limits.','P = c·('+nz(t0)+'^'+(a+1)+' − '+nz(s0)+'^'+(a+1)+')/'+(a+1)+' = '+fx(P1,4),'P('+nz(s0)+' < X < '+nz(t0)+') = '+fx(P1,4)),
+      S('Expected value','E(X) = ∫ x·f(x) dx over the support.','E(X) = c·'+b+'^'+(a+2)+'/'+(a+2)+' = '+fx(c,4)+' × '+nz(rd(Math.pow(b,a+2)/(a+2),4)),'E(X) = '+fx(EX,4))
+    ],
+    draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,{x0:0,x1:b*1.12,ymax:f(b),ticks:niceTicks(0,b*1.12,7),curves:[{f:f,color:'accent',lw:2.6,from:0,x0:0,x1:b}],shades:[{f:f,a:s0,b:t0,color:'accent',alpha:.3,from:2}],vlines:[{x:s0,label:nz(s0),color:'ink3',from:2},{x:t0,label:nz(t0),color:'ink3',from:2},{x:EX,label:'E(X)',color:'warn',from:3}],label:{text:'P = '+fx(P1,4),from:2},title:form});}
+  };
+}
+function drawCdfSteps(ctx,W,H,s,C,q){
+  var xs=q.xs,F=q.F,P=plot(W,H,{x0:xs[0]-1,x1:xs[xs.length-1]+1,y1:1.1,t:30,b:34,l:38}),hl=q.hl[s]||[];
+  axisX(ctx,P,C,xs);
+  [0,0.5,1].forEach(function(v){T(ctx,fx(v,1),P.l-6,P.Y(v)+4,C.ink3,10.5,'right');ctx.save();ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(P.l,P.Y(v));ctx.lineTo(P.W-P.r,P.Y(v));ctx.stroke();ctx.restore();});
+  T(ctx,'F(x) = P(X ≤ x)',P.l+2,16,C.ink3,11.5);
+  var prev=0;
+  xs.forEach(function(x,i){
+    var on=hl.indexOf(i)>=0,xl=i?xs[i-1]:P.x0;
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(P.X(xl),P.Y(prev));ctx.lineTo(P.X(x),P.Y(prev));ctx.stroke();
+    ctx.strokeStyle=on?C.good:C.a('accent',.5);ctx.lineWidth=on?4:1.5;ctx.beginPath();ctx.moveTo(P.X(x),P.Y(prev));ctx.lineTo(P.X(x),P.Y(F[i]));ctx.stroke();
+    ctx.fillStyle=C.surface;ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();ctx.arc(P.X(x),P.Y(prev),4,0,7);ctx.fill();ctx.stroke();
+    ctx.fillStyle=C.accent;ctx.beginPath();ctx.arc(P.X(x),P.Y(F[i]),4,0,7);ctx.fill();
+    if(s>=1)T(ctx,'F='+fx(F[i],2),P.X(x)+8,P.Y(F[i])-6,C.ink2,10.5,'left',600);
+    if(on)T(ctx,'p='+fx(F[i]-prev,2),P.X(x)+8,P.Y(F[i])+14,C.good,10.5,'left',700);
+    prev=F[i];
+  });
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(P.X(xs[xs.length-1]),P.Y(1));ctx.lineTo(P.W-P.r,P.Y(1));ctx.stroke();
+}
+function genCdfD(){
+  var xs=[0,1,2,3,4],w=[1,1,1,1,1];
+  for(var u=0;u<15;u++)w[rnd(0,4)]++;
+  var p=w.map(function(v){return v/20;}),F=[],run=0;
+  p.forEach(function(v){run+=v;F.push(rd(run,2));});
+  var k=rnd(1,3),a=rnd(0,2),b=rnd(a+1,4),c=rnd(2,4);
+  var Fv=function(i){return i<0?0:F[i];};
+  var pk=rd(Fv(k)-Fv(k-1),2),pab=rd(Fv(b)-Fv(a),2),pc=rd(1-Fv(c-1),2);
+  var hl3=[],hl4=[];for(var i=a+1;i<=b;i++)hl3.push(i);for(var j=c;j<=4;j++)hl4.push(j);
+  return {
+    text:'A discrete random variable X takes the values 0, 1, 2, 3, 4. Its CDF F(x) = P(X ≤ x) has the values shown below. Find P(X = '+k+'), P('+a+' < X ≤ '+b+') and P(X ≥ '+c+').',
+    pills:F.map(function(v,i){return 'F('+i+') = '+fx(v,2);}),
+    steps:[
+      S('A CDF jumps at each possible value','F stays flat between possible values and jumps by exactly p(x) at each one, so p(x) = F(x) − F(x−1).','p = ('+p.map(function(v){return fx(v,2);}).join(', ')+')'),
+      S('A single value','The probability of one value is the size of its jump (green).','P(X = '+k+') = F('+k+') − F('+(k-1)+') = '+fx(Fv(k),2)+' − '+fx(Fv(k-1),2),'P(X = '+k+') = '+fx(pk,2)),
+      S('A range','P(a < X ≤ b) = F(b) − F(a). The lower limit is excluded and the upper limit is included.','P('+a+' < X ≤ '+b+') = F('+b+') − F('+a+') = '+fx(Fv(b),2)+' − '+fx(Fv(a),2),'P = '+fx(pab,2)),
+      S('At least','Use the complement: P(X ≥ c) = 1 − P(X ≤ c−1) = 1 − F(c−1).','P(X ≥ '+c+') = 1 − F('+(c-1)+') = 1 − '+fx(Fv(c-1),2),'P = '+fx(pc,2))
+    ],
+    draw:function(ctx,W,H,s,C){drawCdfSteps(ctx,W,H,s,C,{xs:xs,F:F,hl:[[],[],[k],hl3,hl4]});}
+  };
+}
+function genPdfCdf(){
+  var fam=pick(['pow','exp']),s0,t0,F,f,med,Ftext,ftext,x1,medTxt,a,b,lam;
+  if(fam==='pow'){
+    a=pick([2,3]);b=pick([2,3,4]);
+    s0=rd(b*pick([0.25,0.5]),2);t0=rd(b*pick([0.75,0.9]),2);
+    F=function(x){return x<=0?0:x>=b?1:Math.pow(x/b,a);};
+    f=function(x){return x>0&&x<b?a*Math.pow(x,a-1)/Math.pow(b,a):0;};
+    med=b*Math.pow(0.5,1/a);x1=b*1.12;
+    Ftext='F(x) = (x/'+b+')^'+a+' for 0 ≤ x ≤ '+b+'  (0 below, 1 above)';
+    ftext='f(x) = F′(x) = '+(a===2?'2x':'3x²')+'/'+b+'^'+a+' on (0, '+b+')';
+    medTxt='(m/'+b+')^'+a+' = 0.5  ⇒  m = '+b+'·0.5^(1/'+a+')';
+  } else {
+    lam=pick([0.5,1,2]);s0=pick([0.5,1]);t0=pick([2,3]);
+    F=function(x){return x<=0?0:1-Math.exp(-lam*x);};
+    f=function(x){return x>0?lam*Math.exp(-lam*x):0;};
+    med=Math.LN2/lam;x1=4/lam;
+    Ftext='F(x) = 1 − e^(−'+lam+'x) for x ≥ 0';
+    ftext='f(x) = F′(x) = '+lam+'e^(−'+lam+'x) for x > 0';
+    medTxt='1 − e^(−'+lam+'m) = 0.5  ⇒  m = ln 2/'+lam;
+  }
+  var Pab=F(t0)-F(s0),ymax=0;
+  for(var i=1;i<=200;i++)ymax=Math.max(ymax,f(x1*i/200));
+  if(fam==='exp')ymax=lam;
+  return {
+    text:'A continuous random variable X has CDF '+Ftext+'. Find the pdf, P('+nz(s0)+' < X < '+nz(t0)+') and the median of X.',
+    pills:[fam==='pow'?'F(x) = (x/'+b+')^'+a:'F(x) = 1 − e^(−'+lam+'x)','limits '+nz(s0)+' and '+nz(t0)],
+    steps:[
+      S('Differentiate the CDF','The pdf is the slope of the CDF.',Ftext+'\n'+ftext),
+      S('Probabilities come straight from F','P(a < X < b) = F(b) − F(a). No integration is needed.','P('+nz(s0)+' < X < '+nz(t0)+') = F('+nz(t0)+') − F('+nz(s0)+') = '+fx(F(t0),4)+' − '+fx(F(s0),4),'P = '+fx(Pab,4)),
+      S('Median','The median m is where half the probability lies below it: F(m) = 0.5.',medTxt,'m = '+fx(med,4))
+    ],
+    draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,{x0:0,x1:x1,ymax:ymax,ticks:niceTicks(0,x1,7),curves:[{f:f,color:'accent',lw:2.6,from:0,x0:0,x1:fam==='pow'?b:x1}],shades:[{f:f,a:s0,b:t0,color:'accent',alpha:.3,from:2}],vlines:[{x:s0,label:nz(s0),color:'ink3',from:2},{x:t0,label:nz(t0),color:'ink3',from:2},{x:med,label:'median',color:'warn',from:3}],label:{text:'P = '+fx(Pab,4),from:2},title:'pdf f(x), the slope of F'});}
+  };
+}
+
 /* ================= module registry ================= */
 var MODULES=[
   {id:'data',label:'Data & Probability',week:'Wk 1\u20132',blurb:'Linear transformations of data, total probability and Bayes’ rule.',types:[
     {id:'transform',label:'Linear transforms',gen:genTransform},{id:'bayes2',label:'Bayes: test result',gen:genBayes2},{id:'bayes3',label:'Bayes: three sources',gen:genBayes3}]},
+  {id:'rv',label:'Random Variables',week:'Wk 3',blurb:'Normalizing a pmf or pdf, reading probabilities from a CDF table, and getting a pdf from a CDF.',types:[
+    {id:'normd',label:'Normalize a pmf',gen:genNormD},{id:'normc',label:'Normalize a pdf',gen:genNormC},{id:'cdfd',label:'CDF table',gen:genCdfD},{id:'pdfcdf',label:'pdf from a CDF',gen:genPdfCdf}]},
   {id:'joint',label:'Joint & Moments',week:'Wk 4\u20135',blurb:'Joint pmf tables, covariance, conditional expectation and variance, variance of sums, Markov and Chebyshev.',types:[
     {id:'joint',label:'Joint pmf table',gen:genJoint},{id:'iter',label:'Iterated E and Var',gen:genIter},{id:'varsum',label:'Variance of a sum',gen:genVarSum},{id:'cheb',label:'Markov & Chebyshev',gen:genCheb}]},
   {id:'poisson',label:'Poisson & Exponential',week:'Wk 6\u20137',blurb:'Splitting and independence in Poisson processes, waiting times, memorylessness and minimum lifetimes.',types:[
@@ -1429,14 +1544,14 @@ function renderStage(){
     '<div class="workspace"><div class="left">'+
       '<section class="card q-card"><div class="q-meta" id="qMeta"></div><p class="q-text" id="qText"></p><div class="pills" id="qPills"></div></section>'+
       '<section class="card viz"><canvas id="cv" role="img" aria-label="Diagram for the current question"></canvas></section>'+
-      '<div class="actions"><button class="btn" id="bNext">Next step</button><button class="btn ghost" id="bAll">Show all</button><button class="btn ghost" id="bNew">New question</button></div>'+
+      '<div class="actions"><button class="btn ghost" id="bBack">Back</button><button class="btn" id="bNext">Next step</button><button class="btn ghost" id="bAll">Show all</button><button class="btn ghost" id="bNew">New question</button></div>'+
     '</div>'+
     '<section class="card steps-card"><div class="steps-head"><span>Worked solution</span><span id="stepCount"></span></div><div id="steps"></div></section></div>';
-  el={chips:document.getElementById('chips'),meta:document.getElementById('qMeta'),text:document.getElementById('qText'),pills:document.getElementById('qPills'),cv:document.getElementById('cv'),next:document.getElementById('bNext'),all:document.getElementById('bAll'),nw:document.getElementById('bNew'),steps:document.getElementById('steps'),count:document.getElementById('stepCount')};
+  el={chips:document.getElementById('chips'),meta:document.getElementById('qMeta'),text:document.getElementById('qText'),pills:document.getElementById('qPills'),cv:document.getElementById('cv'),back:document.getElementById('bBack'),next:document.getElementById('bNext'),all:document.getElementById('bAll'),nw:document.getElementById('bNew'),steps:document.getElementById('steps'),count:document.getElementById('stepCount')};
   var chips=[{id:'mixed',label:'Mixed'}].concat(m.types.map(function(t){return {id:t.id,label:t.label};}));
   el.chips.innerHTML=chips.map(function(c){return '<button class="chip'+(c.id===state.type?' active':'')+'" data-t="'+c.id+'">'+H(c.label)+'</button>';}).join('');
   el.chips.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;state.type=b.getAttribute('data-t');Array.prototype.forEach.call(el.chips.children,function(c){c.classList.toggle('active',c===b);});newQuestion();};
-  el.next.onclick=nextStep;el.nw.onclick=newQuestion;el.all.onclick=function(){state.s=state.q?state.q.steps.length:0;applyStep(true);};
+  el.back.onclick=prevStep;el.next.onclick=nextStep;el.nw.onclick=newQuestion;el.all.onclick=function(){state.s=state.q?state.q.steps.length:0;applyStep(true);};
   newQuestion();
 }
 function newQuestion(){
@@ -1455,12 +1570,13 @@ function newQuestion(){
   }).join('');
   applyStep(false);
 }
+function prevStep(){if(!state.q||state.s<=0)return;state.s--;applyStep(false);}
 function nextStep(){if(!state.q||state.s>=state.q.steps.length)return;state.s++;applyStep(true);}
 function applyStep(scroll){
   var n=state.q.steps.length;
   Array.prototype.forEach.call(el.steps.children,function(c,i){c.classList.toggle('on',i<state.s);});
   el.count.textContent='step '+state.s+' of '+n;
-  el.next.disabled=state.s>=n;el.next.textContent=state.s>=n?'All steps shown':state.s===0?'Start':'Next step';
+  el.back.disabled=state.s<=0;el.next.disabled=state.s>=n;el.next.textContent=state.s>=n?'All steps shown':state.s===0?'Start':'Next step';
   draw();
   if(scroll&&state.s>0){var t=el.steps.children[state.s-1];if(t&&t.scrollIntoView){try{t.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}}}
 }
@@ -1475,7 +1591,7 @@ function draw(){
 rail.addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var id=b.getAttribute('data-id');if(id===state.id)return;state.id=id;state.type='mixed';try{history.replaceState(null,'','#'+id);}catch(_){location.hash=id;}renderRail();renderStage();});
 function fromHash(){var h=(location.hash||'').slice(1);if(h&&MODULES.some(function(m){return m.id===h;})&&h!==state.id){state.id=h;state.type='mixed';renderRail();renderStage();}}
 window.addEventListener('hashchange',fromHash);
-document.addEventListener('keydown',function(e){if(e.target&&/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();nextStep();}else if(e.key==='n'||e.key==='N'){newQuestion();}});
+document.addEventListener('keydown',function(e){if(e.target&&/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();nextStep();}else if(e.key==='ArrowLeft'){e.preventDefault();prevStep();}else if(e.key==='n'||e.key==='N'){newQuestion();}});
 if(window.ResizeObserver){var ro=new ResizeObserver(function(){draw();});ro.observe(stage);}else window.addEventListener('resize',draw);
 try{var mq=window.matchMedia('(prefers-color-scheme: dark)');if(mq.addEventListener)mq.addEventListener('change',draw);}catch(_){}
 try{new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(_){}
