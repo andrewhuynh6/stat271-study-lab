@@ -288,6 +288,20 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
   .rail .tab .tab-wk{min-width:44px}
   .rail .tab .tab-name{font-size:14px}
 }
+
+/* ===== sidebar v2: one button per week ===== */
+.rail{gap:6px}
+.rail-h{font-family:var(--font-m); font-size:11px; letter-spacing:.9px; text-transform:uppercase; color:var(--ink-3); margin:14px 4px 2px; grid-column:1/-1}
+.rail-h:first-child{margin-top:2px}
+.rail .tab{flex-direction:row; justify-content:flex-start; align-items:center; gap:12px; padding:8px 12px 8px 8px}
+.rail .tab .tab-wk{flex:none; width:36px; height:36px; min-width:36px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:16px; font-weight:800; background:var(--surface-2); border:2px solid var(--edge); color:var(--ink)}
+.rail .tab .tab-txt{display:flex; flex-direction:column; gap:1px; min-width:0; text-align:left}
+.rail .tab .tab-name{font-size:15px; font-weight:700; line-height:1.2}
+.rail .tab .tab-sub{font-family:var(--font-m); font-size:11px; color:var(--ink-3)}
+.rail .tab.active .tab-sub{color:#333}
+.rail .tab.active .tab-wk{background:#fff; color:#111}
+.rail .tab[data-id="quiz"]{margin-top:0; border-style:solid}
+@media (max-width:980px){.rail .tab .tab-wk{width:30px; height:30px; min-width:30px; font-size:14px}.rail-h{margin-top:6px}}
 </style>
 
 <div class="shell">
@@ -3105,6 +3119,28 @@ var VARIANTS={
   'rv/pdfcdf':[['F(x) = (x/b)ᵃ',/CDF F\(x\) = \(x\//],['F(x) = 1 − e^(−λx)',/CDF F\(x\) = 1 −/]]
 };
 MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+t.id];if(v)t.variants=v.map(function(x,i){return {id:'v'+i,label:x[0],re:x[1]};});});});
+(function(){
+  var T={};MODULES.forEach(function(m){m.types.forEach(function(t){T[t.id]=t;});});
+  var quiz=MODULES.filter(function(m){return m.quiz;})[0];
+  var W=[
+   ['w1','1','Descriptive Statistics','Frequency tables with pie and bar graphs, histograms, ogives, shape, mean, median and mode, quartiles and boxplots, standard deviation, scatter plots with correlation, stem-and-leaf plots and linear transformations.',['freq','hist','ogive','shape','center','quart','sdev','corr','stem','transform']],
+   ['w2','2','Elements of Probability','Sample spaces and events, Venn diagrams and set operations, the axioms, conditional probability, the law of total probability with trees, Bayes’ rule and independence.',['space','venn','axiom','cond','total','bayes2','bayes3','indep']],
+   ['w3','3','Random Variables','Normalizing a pmf or pdf, reading probabilities from a CDF table, and getting a pdf from a CDF.',['normd','normc','cdfd','pdfcdf']],
+   ['w4','4','Joint Distributions','Joint pmf tables, joint pdfs and double integrals, marginals, conditionals and independence, and expectation and variance.',['joint','jpdf','ev']],
+   ['w5','5','Moments & Covariance','Variance of a sum, iterated expectation and variance, and the Markov and Chebyshev inequalities.',['varsum','iter','cheb']],
+   ['w6','6','Poisson & Normal','Splitting a Poisson stream and normal probabilities.',['split','z']],
+   ['w7','7','Exponential & Chi-square','Independent increments, the n-th arrival time, memorylessness, minimum of exponentials, chi-square and distance.',['indep','nth','memoryless','min','chisq','dist']],
+   ['w8','8','Sampling & CLT','Sample means and sums, the normal approximation to the binomial and Poisson, the sample variance and the t statistic.',['xbar','sum','disc','s2','t']],
+   ['w9','9','Estimation & Intervals','Method of moments, maximum likelihood, and confidence intervals for means, variances and sample size.',['mom','mle','ciz','cit','civ','cin']],
+   ['w10','10','Hypothesis Testing','Setting up tests, z and t tests with p-values, Type I and II error and power, and the link to confidence intervals.',['setup','tz','tt','power','dual']],
+   ['w11','11','Linear Regression','Fitting the least-squares line, prediction and extrapolation, reading R output, R² and adjusted R², and multiple regression.',['regfit','regpred','regout','r2','mlr']],
+   ['w12','12','ANOVA','One-way ANOVA from raw data and from summary statistics, unequal group sizes, and completing the ANOVA table.',['aovraw','aovuneq','aovsum','aovtbl']],
+   ['w13','13','PCA','Variance explained and scree plots, principal components of a covariance matrix, projections, and the link to SVD.',['scree','pc2','proj','svd']]
+  ];
+  MODULES.length=0;
+  W.forEach(function(w){MODULES.push({id:w[0],num:w[1],label:w[2],week:'Wk '+w[1],title:'Week '+w[1]+' · '+w[2],blurb:w[3],types:w[4].map(function(id){return T[id];}).filter(Boolean)});});
+  if(quiz){quiz.num='✓';quiz.title='Quiz · Concept check';MODULES.push(quiz);}
+})();
 
 /* ================= Simpler words mode ================= */
 var EASY_MAP={'random variables':'numbers we measure (random variables)','random variable':'a number we measure (random variable)','probabilities':'chances (probabilities)','probability':'chance (probability)','pmf':'chance table (pmf)','pdfs':'chance curves (pdfs)','pdf':'chance curve (pdf)','cdf':'running-total curve (CDF)','expected value':'average (expected value)','expectation':'average (expectation)','variance':'spread (variance)','standard deviation':'typical spread (standard deviation)','marginals':'one-variable views (marginals)','marginal':'one-variable view (marginal)','conditional':'given-that (conditional)','independent':'not affecting each other (independent)','independence':'not affecting each other (independence)','integrate':'add up (integrate)','integral':'sum of tiny pieces (integral)','integrals':'sums of tiny pieces (integrals)','normalize':'scale so the total is 1 (normalize)','covariance':'how two things move together (covariance)','correlation':'how tightly two things move together (correlation)','p-value':'surprise score (p-value)','confidence interval':'range we trust (confidence interval)','hypothesis':'claim (hypothesis)','sample mean':'average of what we measured (sample mean)','sample':'group we measured (sample)','population':'everything we care about (population)','estimate':'best guess (estimate)','estimator':'guessing rule (estimator)','distribution':'pattern of values (distribution)','bound':'limit (bound)'};
@@ -3349,7 +3385,7 @@ function quizAnswer(i){
 function renderQuiz(){
   state.q=null;el={};
   var m=mod();
-  stage.innerHTML='<div class="mod-head"><h2>'+H(m.label)+'</h2><p>'+H(m.blurb)+'</p></div><div class="chips" id="qzWeeks"></div><div class="chips vchips" id="qzKinds"></div><div class="quiz-score" id="qzScore"></div><section class="card quiz-card" id="qzBody"></section>';
+  stage.innerHTML='<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div><div class="chips" id="qzWeeks"></div><div class="chips vchips" id="qzKinds"></div><div class="quiz-score" id="qzScore"></div><section class="card quiz-card" id="qzBody"></section>';
   var wk=quizWeeks(),wc=document.getElementById('qzWeeks'),kc=document.getElementById('qzKinds');
   var drawChips=function(){
     wc.innerHTML=['all'].concat(wk).map(function(w){return '<button class="chip'+(QZ.week===w?' active':'')+'" data-w="'+w+'">'+(w==='all'?'All weeks':w)+'</button>';}).join('');
@@ -3363,7 +3399,11 @@ function renderQuiz(){
 /* ================= QUIZ END ================= */
 function mod(){return MODULES.filter(function(m){return m.id===state.id;})[0];}
 function renderRail(){
-  rail.innerHTML=MODULES.map(function(m){return '<button class="tab'+(m.id===state.id?' active':'')+'" data-id="'+m.id+'" role="tab" aria-selected="'+(m.id===state.id)+'"><span class="tab-name">'+H(m.label)+'</span><span class="tab-wk">'+H(m.week)+'</span></button>';}).join('');
+  var heads={w1:'Foundations · Wk 1–2',w3:'Distributions · Wk 3–8',w9:'Inference · Wk 9–10',w11:'Models · Wk 11–13',quiz:'Check yourself'};
+  rail.innerHTML=MODULES.map(function(m){
+    var h=heads[m.id]?'<div class="rail-h">'+heads[m.id]+'</div>':'',sub=m.quiz?QUIZ.length+' questions':m.types.length+' problem types';
+    return h+'<button class="tab'+(m.id===state.id?' active':'')+'" data-id="'+m.id+'" role="tab" aria-selected="'+(m.id===state.id)+'"><span class="tab-wk">'+H(m.num||m.week)+'</span><span class="tab-txt"><span class="tab-name">'+H(m.label)+'</span><span class="tab-sub">'+sub+'</span></span></button>';
+  }).join('');
 }
 function renderStage(){
   var m=mod();
@@ -3372,7 +3412,7 @@ function renderStage(){
   if(m.quiz){renderQuiz();return;}
   if(m.quiz){renderQuiz();return;}
   if(m.quiz){renderQuiz();return;}
-  stage.innerHTML='<div class="mod-head"><h2>'+H(m.label)+'</h2><p>'+H(m.blurb)+'</p></div>'+
+  stage.innerHTML='<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div>'+
     '<div class="chips" id="chips"></div><div class="chips vchips" id="vchips" hidden></div>'+
     '<div class="workspace"><div class="left">'+
       '<section class="card q-card"><div class="q-meta" id="qMeta"></div><p class="q-text" id="qText"></p><div class="pills" id="qPills"></div><div class="tip-row"><button type="button" class="btn ghost tipbtn" id="bNums" aria-pressed="false">Pull out the numbers</button><button type="button" class="btn ghost tipbtn" id="bTip" aria-expanded="false">Tips</button><button type="button" class="btn ghost tipbtn" id="easyBtn" aria-pressed="false">Simpler words: off</button></div><div class="tip-box" id="tipBox" hidden></div></section><div class="easy-note" id="easyNote" hidden></div>'+
