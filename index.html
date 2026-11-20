@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>STAT 271 Doodle Draft</title>
+<title>STAT 271 Study Lab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
@@ -258,19 +258,53 @@ mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; pad
 .hero .btn + .btn{margin-left:8px}
 @media (min-width:901px){.workspace{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:22px}}
 @media (max-width:700px){body{font-size:16px} .q-text{font-size:19px} .step-x p{font-size:17.5px} .formula{font-size:17.5px}}
+
+/* ===== layout: weeks in a left bar, balanced hero ===== */
+.hero{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:28px; align-items:center; margin-bottom:22px}
+.hero-r{background:var(--surface); border:2px solid var(--edge); box-shadow:4px 4px 0 var(--edge); border-radius:16px; padding:18px 20px}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px}
+.stat{background:var(--surface-2); border:2px solid var(--edge); border-radius:12px; padding:10px 8px; text-align:center}
+.stat b{display:block; font-family:var(--font-d); font-size:clamp(26px,3.2vw,40px); line-height:1.05; font-weight:800}
+.stat span{font-size:13px; color:var(--ink-2)}
+.hero-r .fine{margin:0; max-width:none}
+.layout{display:grid; grid-template-columns:270px minmax(0,1fr); gap:26px; align-items:start}
+.rail{position:sticky; top:14px; display:flex; flex-direction:column; gap:8px; overflow:visible; border-bottom:none; margin-bottom:0; max-height:calc(100vh - 28px); overflow-y:auto; padding:4px 8px 8px 2px}
+.rail .tab{display:flex; flex-direction:row-reverse; justify-content:flex-end; align-items:center; gap:11px; width:100%; text-align:left; background:var(--surface); border:2px solid var(--edge); border-radius:12px; box-shadow:3px 3px 0 var(--edge); padding:9px 12px; border-bottom-width:2px; white-space:normal}
+.rail .tab:hover{background:var(--surface-2)}
+.rail .tab .tab-wk{flex:none; min-width:52px; text-align:center; background:var(--surface-2); border:1.5px solid var(--edge); border-radius:8px; padding:2px 6px; font-size:11px; font-weight:700; color:var(--ink)}
+.rail .tab .tab-name{font-size:15px; font-weight:700; line-height:1.25; white-space:normal; min-width:0}
+.rail .tab.active{background:#FFC53D; color:#111; border:2px solid var(--edge); border-bottom:2px solid var(--edge)}
+.rail .tab.active .tab-wk,.rail .tab.active .tab-name{color:#111}
+.rail .tab.active .tab-wk{background:rgba(255,255,255,.55)}
+.rail .tab[data-id="quiz"]{margin-top:8px; border-style:dashed}
+.quiz-card .actions{margin-top:24px}
+.quiz-card .opts{margin-bottom:4px}
+@media (max-width:980px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .layout{grid-template-columns:minmax(0,1fr); gap:16px}
+  .rail{position:static; max-height:none; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; padding:2px}
+  .rail .tab{padding:8px 10px}
+  .rail .tab .tab-wk{min-width:44px}
+  .rail .tab .tab-name{font-size:14px}
+}
 </style>
 
 <div class="shell">
   <header class="hero">
-    <div>
+    <div class="hero-l">
       <h1>STAT 271<br>Study Lab</h1>
       <p>Randomized practice with a picture for every step.</p>
       <a class="btn" href="#stage" id="heroStart">Start practicing</a> <a class="btn ghost" href="#quiz" id="heroQuiz">Quiz</a>
     </div>
+    <aside class="hero-r" aria-label="What is inside">
+      <div class="stats" id="heroStats"></div>
+      <p class="fine">Built from the Week 1 to 13 slides, problem sets, tutorials and midterms. Answers are computed in code, and exam tables round to 3 or 4 decimals, so expect small differences.</p>
+    </aside>
   </header>
-  <p class="fine">Built from the Week 1 to 10 slides, problem sets and midterms. Answers are computed in code, and your exam tables round to 3 or 4 decimals, so expect small differences.</p>
-  <nav class="rail" id="rail" role="tablist" aria-label="Topics"></nav>
-  <main id="stage"></main>
+  <div class="layout">
+    <nav class="rail" id="rail" role="tablist" aria-label="Weeks"></nav>
+    <main id="stage"></main>
+  </div>
 </div>
 
 <script>
@@ -3330,7 +3364,6 @@ function renderQuiz(){
 function mod(){return MODULES.filter(function(m){return m.id===state.id;})[0];}
 function renderRail(){
   rail.innerHTML=MODULES.map(function(m){return '<button class="tab'+(m.id===state.id?' active':'')+'" data-id="'+m.id+'" role="tab" aria-selected="'+(m.id===state.id)+'"><span class="tab-name">'+H(m.label)+'</span><span class="tab-wk">'+H(m.week)+'</span></button>';}).join('');
-  var a=rail.querySelector('.tab.active');if(a&&a.scrollIntoView){try{a.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}}
 }
 function renderStage(){
   var m=mod();
@@ -3427,7 +3460,12 @@ if(window.ResizeObserver){var ro=new ResizeObserver(function(){draw();});ro.obse
 try{var mq=window.matchMedia('(prefers-color-scheme: dark)');if(mq.addEventListener)mq.addEventListener('change',draw);}catch(_){}
 try{new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(_){}
 var h0=(location.hash||'').slice(1);if(h0&&MODULES.some(function(m){return m.id===h0;}))state.id=h0;
-renderRail();renderStage();initEasy();
+function fillHeroStats(){
+  var hs=document.getElementById('heroStats');if(!hs)return;
+  var types=0;MODULES.forEach(function(m){if(!m.quiz)types+=m.types.length;});
+  hs.innerHTML='<div class="stat"><b>13</b><span>weeks</span></div><div class="stat"><b>'+types+'</b><span>problem types</span></div><div class="stat"><b>'+QUIZ.length+'</b><span>quiz questions</span></div>';
+}
+renderRail();renderStage();initEasy();fillHeroStats();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
 })();
 </script>
