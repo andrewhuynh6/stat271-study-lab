@@ -1826,21 +1826,21 @@ MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+
 /* ================= the professor ================= */
 var PROF_MOODS=['Skeptical','Curious','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=3;
 var PROF_GREET=[
-  ['Ah, one of my students. I’m saving my pride for when you finish a question.','Finish one question and I’ll consider smiling.'],
-  ['You’re back. I’m allowed to be slightly impressed.','Keep going. You’re off to a good start.'],
-  ['Look who’s being productive. I’m smiling. Don’t make it weird.','Solid work so far. Keep it up.'],
-  ['Keep this up and I’ll bring out the good chalk.','You’re doing great. I told the department. They didn’t care, but I did.'],
-  ['I’m tearing up. It’s the chalk dust. Mostly.','You’ve worked through a heroic number of questions. I’m framing this.']
+  ['Ah, one of my students. Finish a question and I’ll start smiling.','Welcome. Let’s see what you can do.'],
+  ['Good to see you again. That was a solid start.','Keep going. You’re making progress.'],
+  ['Good to see you. You’re doing well.','Nice work so far. Keep it up.'],
+  ['You’re doing great. Keep this up.','I’m really happy with your progress.'],
+  ['You’ve done so much. I’m really proud of you.','Look how far you’ve come. Exam day is going to go well.']
 ];
 var PROF_DONE=[
-  ['One down. Not bad at all.','You read the steps! Revolutionary.','A finished question. Someone mark the calendar.'],
-  ['Another one! You’re getting the hang of this.','Nice. That’s what we in the business call progress.','Two things I like: probability, and you finishing things.'],
-  ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant roll.','That was clean. Do another, I’m enjoying this.'],
-  ['Magnificent. I need a moment.','You’re making this professor very happy.','Textbook. And I have read the textbook.'],
-  ['I can’t stop smiling. Someone get me a tissue.','Legend. They’ll name a p-value after you.','The exam won’t know what hit it.']
+  ['One down. Not bad at all.','You read the steps. Good start.','A finished question. Keep going.'],
+  ['Another one! You’re getting the hang of this.','Nice. That’s real progress.','Good. I like where this is going.'],
+  ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant one.','That was clean. Do another.'],
+  ['Excellent. That was well done.','You’re making me very happy.','Well done. You really understand this now.'],
+  ['I can’t stop smiling.','Fantastic work. The exam won’t know what hit it.','You should be proud of yourself. I am.']
 ];
 var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! Excellent work. I’m proud of you.','Level up! Top marks. You’ve really earned this.'];
-var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I only cried a little. Let’s go.','Okay, that’s one. The sulking is over. Don’t do that again.'];
+var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I missed you. Let’s get going.','Okay, that’s one. No more skipping days.'];
 function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
 function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
 function profDays(a,b){var pa=a.split('-'),pb=b.split('-');return Math.round((Date.UTC(+pb[0],+pb[1]-1,+pb[2])-Date.UTC(+pa[0],+pa[1]-1,+pa[2]))/864e5);}
@@ -1856,8 +1856,8 @@ var PROF=profLoad(),profSad=false,profArm=0,profGreeting='';
       PROF.pts-=loss;profSad=true;
       profGreeting=pick([
         'You were gone '+away+' days. I got sad.'+(loss?' Pride dropped by '+loss+'.':''),
-        'I waited '+away+' days. I graded nothing. I reflected on my choices.'+(loss?' (Pride −'+loss+'.)':''),
-        'Oh, you remembered I exist.'+(loss?' I lost '+loss+' pride points, but I’m listening.':' Let’s fix this.')
+        'It’s been '+away+' days. I missed you.'+(loss?' (Pride −'+loss+'.)':''),
+        'Oh, you’re back.'+(loss?' I lost '+loss+' pride points, but I’m glad to see you.':' Let’s get back to it.')
       ]);
     } else profGreeting=pick(PROF_GREET[profLevel(PROF.pts)]);
     PROF.last=today;
@@ -1913,7 +1913,7 @@ function profDone(){
 document.getElementById('profReset').onclick=function(){
   var b=this;
   if(!profArm){profArm=1;b.textContent='Sure? Click again';setTimeout(function(){profArm=0;b.textContent='Reset';},3000);return;}
-  profArm=0;PROF={pts:0,total:0,last:profToday()};profSad=false;profSave();b.textContent='Reset';renderProf('Fresh start. I’m skeptical again. Impress me.',true);
+  profArm=0;PROF={pts:0,total:0,last:profToday()};profSad=false;profSave();b.textContent='Reset';renderProf('Fresh start. Let’s see what you can do.',true);
 };
 renderProf(profGreeting,false);
 
