@@ -275,7 +275,7 @@ function richRuns(s){
     if(SUP[ch]){flush();runs.push({t:SUP[ch],k:'sup'});i++;continue;}
     if(SUB[ch]){flush();runs.push({t:SUB[ch],k:'sub'});i++;continue;}
     if(ch==='^'||ch==='_'){
-      var m=s.slice(i+1).match(/^(\((?:[^()]|\([^()]*\))*\)|[−\-]?[A-Za-z0-9.Ͱ-Ͽ]+[₀-₃ₙᵢ]*)/);
+      var m=s.slice(i+1).match(/^(\((?:[^()]|\([^()]*\))*\)|[−\-]?[A-Za-z0-9.Ͱ-Ͽ∞]+[₀-₃ₙᵢ]*)/);
       if(m){flush();runs.push({t:m[1],k:ch==='^'?'sup':'sub'});i+=1+m[1].length;continue;}
     }
     buf+=ch;i++;
@@ -433,35 +433,58 @@ function genTransform(){
     draw:function(ctx,W,H,s,C){drawBoxes(ctx,W,H,s,C,{five:five,yfive:yf,mean:mean,sd:sd,ym:ym,ysd:ysd,yform:yform});}
   };
 }
-function drawBayes(ctx,W,H,s,C,q){
-  var l=16,r=16,w=W-l-r,G=q.groups,tot=sum(G.map(function(g){return g.w;}));
-  var y1=34,h1=40;
-  T(ctx,q.popLabel,l,y1-10,C.ink3,11.5,'left',600);
-  var x=l,cols=['accent','sky','warn','good'];
-  G.forEach(function(g,i){
-    var sw=Math.max(5,g.w/tot*w);
-    ctx.fillStyle=C.a(cols[i%4],.12); ctx.fillRect(x,y1,sw,h1); ctx.strokeStyle=C.a(cols[i%4],.7); ctx.lineWidth=1.2; ctx.strokeRect(x,y1,sw,h1);
-    if(s>=1){var hh=Math.max(3,g.r*h1);ctx.fillStyle=C.a(cols[i%4],.75);ctx.fillRect(x,y1+h1-hh,sw,hh);}
-    g._x=x;g._w=sw;x+=sw;
-  });
-  var hits=G.map(function(g){return g.w*g.r;}),ht=sum(hits);
-  if(s>=2){
-    var y2=y1+h1+38;
-    T(ctx,q.hitLabel,l,y2-10,C.ink3,11.5,'left',600);
-    var x2=l;
-    G.forEach(function(g,i){
-      var sw=Math.max(4,hits[i]/ht*w),tg=(i===q.target);
-      ctx.fillStyle=C.a(cols[i%4],tg?.8:.3); ctx.fillRect(x2,y2,sw,h1);
-      if(tg){ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.strokeRect(x2,y2,sw,h1);}
-      x2+=sw;
-    });
-    if(s>=3)T(ctx,q.result,W-r,y2+h1+17,C.accent,15,'right',700);
+function bayesFit(ctx,lines,w,hgt,size){
+  ctx.font='600 '+size+'px '+MONO;
+  for(var k=lines.length;k>=1;k--){
+    var sub=lines.slice(0,k),mw=Math.max.apply(null,sub.map(function(t){return ctx.measureText(t).width;}));
+    if(mw<=w-6&&k*(size+3)<=hgt)return sub;
   }
-  var ly=y1+h1+(s>=2?38+h1+38:26);
+  return null;
+}
+function drawBayes(ctx,W,H,s,C,q){
+  var G=q.groups,n=G.length,cols=['accent','sky','warn','good'],pad=10,gap=6;
+  var dis=q.kind==='dis',hs=dis?'+':'B',tg=q.target;
+  var sym=function(i){return dis?(i===0?'D':'Dᶜ'):'A'+(i+1);};
+  var hits=G.map(function(g){return g.w*g.r;}),tot=sum(hits),post=hits[tg]/tot;
+  var f4=function(v){return fx(v,4);};
+  var ay=30,ah=Math.round((H-30)*0.30),gw=(W-2*pad-(n-1)*gap)/n;
+  T(ctx,'Who is who (sizes not to scale)',pad,17,C.ink3,11);
   G.forEach(function(g,i){
-    ctx.fillStyle=C[cols[i%4]]; ctx.fillRect(l,ly+i*18-9,10,10);
-    T(ctx,g.name+':  '+g.desc,l+16,ly+i*18,C.ink2,11.5,'left',500);
+    var x=pad+i*(gw+gap),col=cols[i%4];
+    ctx.fillStyle=C.a(col,0.1);ctx.fillRect(x,ay,gw,ah);
+    ctx.strokeStyle=C.a(col,0.85);ctx.lineWidth=i===tg?2.2:1.2;ctx.strokeRect(x,ay,gw,ah);
+    var pl=dis?'P('+sym(i)+') = '+nz(rd(g.w,4)):'P('+sym(i)+')='+nz(rd(g.w,4));
+    var f1=bayesFit(ctx,[pl,'P('+sym(i)+')'],gw,ah*0.45,10.5);
+    T(ctx,(f1||['P('+sym(i)+')'])[0],x+gw/2,ay+14,C[col],10.5,'center',700);
+    if(s>=1){
+      var hh=Math.round(ah*0.5);
+      ctx.fillStyle=C.a(col,0.38);ctx.fillRect(x,ay+ah-hh,gw,hh);
+      ctx.strokeStyle=C.a(col,0.85);ctx.lineWidth=1;ctx.strokeRect(x,ay+ah-hh,gw,hh);
+      var hl='P('+hs+'|'+sym(i)+') = '+nz(rd(g.r,4));
+      var f2=bayesFit(ctx,[hl,'P('+hs+'|'+sym(i)+')'],gw,hh,10.5);
+      T(ctx,(f2||['P('+hs+'|'+sym(i)+')'])[0],x+gw/2,ay+ah-hh/2+4,C.ink,10.5,'center',700);
+    }
   });
+  if(s<2)return;
+  var by=ay+ah+34,bh=Math.round((H-30)*0.17),W2=W-2*pad,x2=pad,unfit=[];
+  T(ctx,'Only the '+(dis?'positives':'defects')+', drawn to scale',pad,by-9,C.ink3,11);
+  G.forEach(function(g,i){
+    var wd=Math.max(3,hits[i]/tot*W2),col=cols[i%4],on=i===tg;
+    ctx.fillStyle=C.a(col,on?0.55:0.28);ctx.fillRect(x2,by,wd,bh);
+    ctx.strokeStyle=C[col];ctx.lineWidth=on&&s>=3?3:1.2;ctx.strokeRect(x2,by,wd,bh);
+    var lines=['P('+sym(i)+')P('+hs+'|'+sym(i)+')','= '+f4(hits[i])],fit=bayesFit(ctx,lines,wd,bh,10.5);
+    if(fit){fit.forEach(function(t,k){T(ctx,t,x2+wd/2,by+bh/2+(fit.length===1?4:-2+k*13),C.ink,10.5,'center',700);});}
+    else unfit.push(i);
+    x2+=wd;
+  });
+  T(ctx,'P('+hs+') = '+f4(tot),W-pad,by+bh+15,C.ink2,11.5,'right',700);
+  var ly=by+bh+15;
+  unfit.forEach(function(i,k){ctx.fillStyle=C[cols[i%4]];ctx.fillRect(pad,ly-8+k*15,9,9);T(ctx,'P('+sym(i)+')P('+hs+'|'+sym(i)+') = '+f4(hits[i]),pad+14,ly+k*15,C.ink2,10.5,'left',600);});
+  if(s>=3){
+    var fy=Math.min(H-10,by+bh+15+Math.max(unfit.length,1)*15+18),x=pad;
+    var parts=[['P('+sym(tg)+' | '+hs+') = ',C.ink2],[f4(hits[tg]),C[cols[tg%4]]],[' ÷ ',C.ink2],[f4(tot),C.ink],[' = '+f4(post),C.accent]];
+    parts.forEach(function(pt,k){ctx.font='700 13px '+MONO;var wd=ctx.measureText(pt[0]).width;T(ctx,pt[0],x,fy,pt[1],13,'left',700);x+=wd;});
+  }
 }
 function genBayes2(){
   var p=pick([0.01,0.02,0.05,0.1]),se=pick([0.9,0.95,0.99]),fp=pick([0.02,0.05,0.1]);
@@ -472,10 +495,10 @@ function genBayes2(){
     pills:['P(D) = '+nz(p),'P(+|D) = '+nz(se),'P(+|Dᶜ) = '+nz(fp)],
     steps:[
       S('Name the events','D = has the condition, + = tests positive. We want P(D | +), which is the reverse of what the test reports.','Given: P(D) = '+nz(p)+', P(+|D) = '+nz(se)+', P(+|Dᶜ) = '+nz(fp)),
-      S('Total probability of a positive','A positive can come from a person with the condition or without it. Add both paths.','P(+) = P(+|D)P(D) + P(+|Dᶜ)P(Dᶜ)\n     = '+nz(se)+'('+nz(p)+') + '+nz(fp)+'('+nz(rd(1-p,4))+')\n     = '+fx(tp,4)+' + '+fx(fpv,4)+' = '+fx(pp,4)),
-      S('Bayes’ rule','Take the share of positives that come from people who have the condition.','P(D|+) = P(+|D)P(D) / P(+) = '+fx(tp,4)+' / '+fx(pp,4),'P(D | +) = '+fx(post,4)+(post<0.5?'  (most positives are false alarms)':''))
+      S('Total probability of a positive','A positive can come from a person with the condition or without it. Each path is one shape in the lower bar, and the whole bar is their sum.','P(+) = P(+|D)P(D) + P(+|Dᶜ)P(Dᶜ)\n     = '+nz(se)+'('+nz(p)+') + '+nz(fp)+'('+nz(rd(1-p,4))+')\n     = '+fx(tp,4)+' + '+fx(fpv,4)+' = '+fx(pp,4)),
+      S('Bayes’ rule','Divide the shape of positives who have the condition by the whole bar of positives.','P(D|+) = P(+|D)P(D) / P(+) = '+fx(tp,4)+' / '+fx(pp,4),'P(D | +) = '+fx(post,4)+(post<0.5?'  (most positives are false alarms)':''))
     ],
-    draw:function(ctx,W,H,s,C){drawBayes(ctx,W,H,s,C,{popLabel:'Population: filled part = tests positive',hitLabel:'Positives only (width = share)',target:0,result:'P(D | +) = '+fx(post,4),groups:[{name:'D',w:p,r:se,desc:pc(p)+' of people, '+pc(se)+' test positive'},{name:'Dᶜ',w:1-p,r:fp,desc:pc(1-p)+' of people, '+pc(fp)+' test positive'}]});}
+    draw:function(ctx,W,H,s,C){drawBayes(ctx,W,H,s,C,{kind:'dis',popLabel:'Population: filled part = tests positive',hitLabel:'Positives only (width = share)',target:0,result:'P(D | +) = '+fx(post,4),groups:[{name:'D',w:p,r:se,desc:pc(p)+' of people, '+pc(se)+' test positive'},{name:'Dᶜ',w:1-p,r:fp,desc:pc(1-p)+' of people, '+pc(fp)+' test positive'}]});}
   };
 }
 function genBayes3(){
@@ -491,7 +514,7 @@ function genBayes3(){
       S('Total probability of a defect','Add the defect contribution from each supplier.','P(B) = '+sh.map(function(w,i){return nz(w)+'×'+nz(dr[i]);}).join(' + ')+'\n     = '+hit.map(function(h){return fx(h,4);}).join(' + ')+' = '+fx(ht,4)),
       S('Bayes’ rule for supplier '+(j+1),'Take supplier '+(j+1)+'’s share of all defects.','P(A'+(j+1)+'|B) = '+fx(hit[j],4)+' / '+fx(ht,4),'P(A'+(j+1)+' | B) = '+fx(post,4))
     ],
-    draw:function(ctx,W,H,s,C){drawBayes(ctx,W,H,s,C,{popLabel:'All stock: filled part = defective',hitLabel:'Defective items only (width = share)',target:j,result:'P(A'+(j+1)+' | B) = '+fx(post,4),groups:sh.map(function(w,i){return {name:'Supplier '+(i+1),w:w,r:dr[i],desc:pc(w)+' of stock, '+pc(dr[i])+' defective'};})});}
+    draw:function(ctx,W,H,s,C){drawBayes(ctx,W,H,s,C,{kind:'sup',popLabel:'All stock: filled part = defective',hitLabel:'Defective items only (width = share)',target:j,result:'P(A'+(j+1)+' | B) = '+fx(post,4),groups:sh.map(function(w,i){return {name:'Supplier '+(i+1),w:w,r:dr[i],desc:pc(w)+' of stock, '+pc(dr[i])+' defective'};})});}
   };
 }
 
@@ -585,7 +608,8 @@ function drawPmf(ctx,W,H,s,C,q){
   axisX(ctx,P,C,niceTicks(xs[0],xs[xs.length-1],8));
   bars(ctx,P,xs,ys,function(x){return (s>=q.th.hi&&q.inR(x))?C.a('accent',.85):C.a('ink',.26);});
   if(q.ov&&s>=q.th.ov)curve(ctx,P,function(x){return normPDF(x,q.ov.mu,q.ov.sg);},P.x0,P.x1,C.sky,2.2);
-  if(q.vl&&s>=q.th.vl)q.vl.forEach(function(v){vline(ctx,P,v.x,C.warn,v.label,{top:P.t+2});});
+  var vls=q.vlf?q.vlf(s):(q.vl&&s>=q.th.vl?q.vl:[]);
+  vls.forEach(function(v){vline(ctx,P,v.x,C.warn,v.label,{top:P.t+2+(v.dy||0)});});
   var lw=0;
   if(s>=q.th.label){ctx.font='600 14px '+MONO;lw=ctx.measureText(q.label).width;T(ctx,q.label,W-P.r-2,18,C.accent,14,'right',600);}
   if(q.title){ctx.font='500 11.5px '+MONO;var room=W-P.l-P.r-lw-14,t0=q.title;while(t0.length>4&&ctx.measureText(t0).width>room)t0=t0.slice(0,-2);if(t0!==q.title)t0=t0.replace(/\s+$/,'')+'…';T(ctx,t0,P.l+2,18,C.ink3,11.5);}
@@ -800,13 +824,14 @@ function TB(ctx,C,txt,x,y,color,size,align,weight){
   T(ctx,txt,x,y,color,size,align,weight);
 }
 function drawCondMean(ctx,W,H,s,C,q){
-  var m=q.cm,disc=m.kind==='disc',pts=[];
+  var m=q.cm,disc=m.kind==='disc',pts=[],yn=m.yn||'Y',gn=m.gn||'X';
   if(disc)pts=m.xs.slice();else for(var i=0;i<=40;i++)pts.push(m.a+(m.b-m.a)*i/40);
   var x0=disc?m.xs[0]-0.8:m.a-(m.b-m.a)*0.05,x1=disc?m.xs[m.xs.length-1]+0.8:m.b+(m.b-m.a)*0.05;
   var ymax=Math.max.apply(null,pts.map(function(x){return m.mf(x)+Math.sqrt(m.vf(x));}))*1.12;
   var P=plot(W,H,{x0:x0,x1:x1,y1:ymax,t:50,b:36});
   axisX(ctx,P,C,disc?niceTicks(m.xs[0],m.xs[m.xs.length-1],8):niceTicks(m.a,m.b,6),function(v){return nz(rd(v,3));});
   if(disc){var mw=Math.max.apply(null,m.xs.map(m.w));bars(ctx,P,m.xs,m.xs.map(function(x){return m.w(x)/mw*ymax*0.22;}),function(){return C.a('ink',.15);});}
+  else if(m.wf){var wmax=0;pts.forEach(function(x){wmax=Math.max(wmax,m.wf(x));});ctx.beginPath();ctx.moveTo(P.X(m.a),P.Y(0));pts.forEach(function(x){ctx.lineTo(P.X(x),P.Y(m.wf(x)/wmax*ymax*0.28));});ctx.lineTo(P.X(m.b),P.Y(0));ctx.closePath();ctx.fillStyle=C.a('ink',.13);ctx.fill();}
   else{ctx.fillStyle=C.a('ink',.1);ctx.fillRect(P.X(m.a),P.Y(ymax*0.12),P.X(m.b)-P.X(m.a),P.Y(0)-P.Y(ymax*0.12));}
   T(ctx,m.wlabel,P.l+2,35,C.ink3,10.5);
   if(s>=3)pts.forEach(function(x,i){if(!disc&&i%5)return;var px=P.X(x),lo=Math.max(0,m.mf(x)-Math.sqrt(m.vf(x))),hi=m.mf(x)+Math.sqrt(m.vf(x));ctx.strokeStyle=C.a('sky',.75);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,P.Y(lo));ctx.lineTo(px,P.Y(hi));ctx.stroke();});
@@ -815,13 +840,226 @@ function drawCondMean(ctx,W,H,s,C,q){
   if(disc){pts.forEach(function(x){ctx.fillStyle=C.accent;ctx.beginPath();ctx.arc(P.X(x),P.Y(m.mf(x)),3.5,0,7);ctx.fill();});}
   else curve(ctx,P,m.mf,m.a,m.b,C.accent,2.6);
   if(s>=1)T(ctx,m.mlabel,P.l+2,17,C.accent,12,'left',600);
-  if(s>=5)T(ctx,'Var(Y) = '+fx(m.VY,3),W-P.r-2,17,C.accent,14,'right',700);
-  if(s>=3)T(ctx,'blue: ±SD of Y given X',W-P.r-2,35,C.sky,10.5,'right',500);
-  if(s>=2)TB(ctx,C,'E(Y) = '+fx(m.EY,3),P.W-P.r-2,P.Y(m.EY)-6,C.good,12,'right',600);
-  if(s>=4)TB(ctx,C,'SD of E(Y|X)',P.l+4,P.Y(m.EY+m.sdB)-6,C.warn,10.5,'left',600);
+  if(s>=5)T(ctx,'Var('+yn+') = '+fx(m.VY,3),W-P.r-2,17,C.accent,14,'right',700);
+  if(s>=3)T(ctx,'blue: ±SD of '+yn+' given '+gn,W-P.r-2,35,C.sky,10.5,'right',500);
+  if(s>=2)TB(ctx,C,'E('+yn+') = '+fx(m.EY,3),P.W-P.r-2,P.Y(m.EY)-6,C.good,12,'right',600);
+  if(s>=4)TB(ctx,C,'SD of E('+yn+'|'+gn+')',P.l+4,P.Y(m.EY+m.sdB)-6,C.warn,10.5,'left',600);
 }
-function genIter(){
+/* ---- more iterated expectation and variance ---- */
+function genIterBin(){
+  var lam=pick([4,6,8,10]),p=pick([0.2,0.25,0.4,0.5,0.6]);
+  var EX=p*lam,Ew=lam*p*(1-p),Vb=p*p*lam,VX=Ew+Vb;
+  var hi=Math.ceil(lam+4*Math.sqrt(lam)),xs=[];for(var i=0;i<=hi;i++)xs.push(i);
+  return {
+    text:'N ~ Poisson('+lam+') customers enter a shop, and each one independently buys with probability '+p+'. Given N = n, the number of buyers X is Binomial(n, '+p+'). Find E(X) and Var(X).',
+    pills:['N ~ Poisson('+lam+')','X | N ~ Bin(N, '+p+')'],
+    steps:[
+      S('Conditional mean and variance','Given N = n, X ~ Bin(n, p), which has mean np and variance np(1 − p).','E(X | N) = '+p+'N,    Var(X | N) = '+p+'('+nz(rd(1-p,4))+')N'),
+      S('Iterated expectation','E(X) = E[ E(X | N) ] = p·E(N).','E(X) = '+p+' × '+lam,'E(X) = '+nz(rd(EX,4))),
+      S('Within-group part','E[ Var(X | N) ] = p(1 − p)·E(N).','E[Var(X|N)] = '+p+'('+nz(rd(1-p,4))+')('+lam+') = '+fx(Ew,4)),
+      S('Between-group part','Var( E(X | N) ) = p²·Var(N), and a Poisson has Var(N) = λ.','Var(E(X|N)) = '+p+'²('+lam+') = '+fx(Vb,4)),
+      S('Combine (law of total variance)','Var(X) = E[Var(X|N)] + Var(E(X|N)). It simplifies to λp, because X is itself Poisson(λp).','Var(X) = '+fx(Ew,4)+' + '+fx(Vb,4),'Var(X) = '+fx(VX,4))
+    ],
+    draw:function(ctx,W,H,s,C){drawCondMean(ctx,W,H,s,C,{cm:{kind:'disc',xs:xs,w:function(n){return ppmf(n,lam);},mf:function(n){return p*n;},vf:function(n){return n*p*(1-p);},EY:EX,sdB:p*Math.sqrt(lam),VY:VX,mlabel:'E(X | N = n) = '+p+'n',wlabel:'grey: pmf of N',yn:'X',gn:'N'}});},
+    chk:{EX:EX,VX:VX}
+  };
+}
+function genIterPE(){
+  var lam=pick([0.5,1,2]),EX=1/lam,Ew=1/lam,Vb=1/(lam*lam),VX=Ew+Vb;
+  return {
+    text:'Y is exponential with rate '+lam+'. Given Y = y, X ~ Poisson(y). Find E(X) and Var(X).',
+    pills:['Y ~ Exp('+lam+')','X | Y ~ Poisson(Y)'],
+    steps:[
+      S('Conditional mean and variance','A Poisson(y) has mean y and variance y.','E(X | Y) = Y,    Var(X | Y) = Y'),
+      S('Iterated expectation','E(X) = E[ E(X | Y) ] = E(Y) = 1/λ.','E(X) = 1/'+lam,'E(X) = '+nz(rd(EX,4))),
+      S('Within-group part','E[ Var(X | Y) ] = E(Y) = 1/λ.','E[Var(X|Y)] = '+nz(rd(Ew,4))),
+      S('Between-group part','Var( E(X | Y) ) = Var(Y), and an exponential has Var(Y) = 1/λ².','Var(E(X|Y)) = '+nz(rd(Vb,4))),
+      S('Combine (law of total variance)','Var(X) = E[Var(X|Y)] + Var(E(X|Y)).','Var(X) = '+nz(rd(Ew,4))+' + '+nz(rd(Vb,4)),'Var(X) = '+nz(rd(VX,4))+'  (bigger than the mean, because Y varies)')
+    ],
+    draw:function(ctx,W,H,s,C){drawCondMean(ctx,W,H,s,C,{cm:{kind:'cont',a:0,b:4/lam,mf:function(y){return y;},vf:function(y){return y;},wf:function(y){return lam*Math.exp(-lam*y);},EY:EX,sdB:Math.sqrt(Vb),VY:VX,mlabel:'E(X | Y = y) = y',wlabel:'grey: density of Y',yn:'X',gn:'Y'}});},
+    chk:{EX:EX,VX:VX}
+  };
+}
+function genIterNN(){
+  var mu=pick([10,20,50]),tau=pick([2,3,4]),sg=pick([1,2,3]),VX=sg*sg+tau*tau;
+  return {
+    text:'Y ~ N('+mu+', '+tau+'²). Given Y = y, X ~ N(y, '+sg+'²). Find E(X) and Var(X).',
+    pills:['Y ~ N('+mu+', '+tau*tau+')','X | Y ~ N(Y, '+sg*sg+')'],
+    steps:[
+      S('Conditional mean and variance','Given Y = y, X is normal with mean y and variance '+sg*sg+'.','E(X | Y) = Y,    Var(X | Y) = '+sg*sg),
+      S('Iterated expectation','E(X) = E[ E(X | Y) ] = E(Y).','E(X) = '+mu,'E(X) = '+mu),
+      S('Within-group part','The conditional variance is a constant, so its average is the same constant.','E[Var(X|Y)] = '+sg*sg),
+      S('Between-group part','Var( E(X | Y) ) = Var(Y) = τ².','Var(E(X|Y)) = '+tau+'² = '+tau*tau),
+      S('Combine (law of total variance)','Var(X) = E[Var(X|Y)] + Var(E(X|Y)). Variances of the two stages add.','Var(X) = '+sg*sg+' + '+tau*tau,'Var(X) = '+VX)
+    ],
+    draw:function(ctx,W,H,s,C){drawCondMean(ctx,W,H,s,C,{cm:{kind:'cont',a:mu-3*tau,b:mu+3*tau,mf:function(y){return y;},vf:function(){return sg*sg;},wf:function(y){return normPDF(y,mu,tau);},EY:mu,sdB:tau,VY:VX,mlabel:'E(X | Y = y) = y',wlabel:'grey: density of Y',yn:'X',gn:'Y'}});},
+    chk:{EX:mu,VX:VX}
+  };
+}
+
+/* ---- expectation and variance of a random variable ---- */
+function genEV(){
+  var a=pick([2,3,-1,-2,5]),b=pick([1,3,5,-4]);
+  var lin=(a===1?'':a===-1?'−':String(a))+'X '+(b<0?'−':'+')+' '+Math.abs(b);
   if(Math.random()<0.5){
+    var w=[1,1,1,1];for(var u=0;u<16;u++)w[rnd(0,3)]++;
+    var p=w.map(function(v){return v/20;}),xs=[0,1,2,3],ps=p.map(function(v){return fx(v,2);});
+    var EX=sum(p.map(function(v,i){return i*v;})),EX2=sum(p.map(function(v,i){return i*i*v;})),V=EX2-EX*EX,sd=Math.sqrt(V);
+    var EL=a*EX+b,VL=a*a*V;
+    return {
+      text:'A discrete random variable X takes the values 0, 1, 2, 3 with probabilities '+ps.join(', ')+' respectively. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
+      pills:['x = 0, 1, 2, 3','p = ('+ps.join(', ')+')'],
+      steps:[
+        S('Expected value','E(X) = Σ x·p(x).','E(X) = '+xs.map(function(x,i){return x+'('+ps[i]+')';}).join(' + ')+' = '+fx(EX,4),'E(X) = '+fx(EX,4)),
+        S('E(X²) by LOTUS','To average a function of X, apply it to each value and weight by p(x): E(g(X)) = Σ g(x)p(x). You do not need the pmf of X².','E(X²) = '+xs.map(function(x,i){return x+'²('+ps[i]+')';}).join(' + ')+' = '+fx(EX2,4)),
+        S('Variance','Var(X) = E(X²) − [E(X)]².','Var(X) = '+fx(EX2,4)+' − ('+fx(EX,4)+')² = '+fx(V,4),'Var(X) = '+fx(V,4)+',  SD = '+fx(sd,4)),
+        S('Linear change','E(aX + b) = aE(X) + b. Adding b shifts the center but not the spread, and Var(aX + b) = a²Var(X).','E('+lin+') = '+pm(a)+'('+fx(EX,4)+') '+sgnStr(b)+' '+Math.abs(b)+'\nVar('+lin+') = ('+pm(a)+')²('+fx(V,4)+')','E = '+fx(EL,4)+',   Var = '+fx(VL,4))
+      ],
+      draw:function(ctx,W,H,s,C){drawPmf(ctx,W,H,s,C,{xs:xs,pmf:function(x){return p[x];},inR:function(){return false;},th:{hi:99,label:3,ov:99,vl:99,shade:99},vlf:function(st){var o=[];if(st>=1)o.push({x:EX,label:'E(X) = '+fx(EX,2)});if(st>=3){o.push({x:EX-sd,label:'−SD',dy:16});o.push({x:EX+sd,label:'+SD',dy:16});}return o;},label:'Var(X) = '+fx(V,3),title:'pmf of X'});},
+      chk:{kind:'disc',xs:xs,p:p,EX:EX,EX2:EX2,V:V,EL:EL,VL:VL,a:a,b:b}
+    };
+  }
+  var fam=pick(['poly','tri','exp']),f,EXc,EX2c,x1,ymax,ftxt,i1,i2,B,k,lam;
+  if(fam==='poly'){
+    k=pick([1,2]);B=pick([2,3,4]);
+    f=function(x){return x>=0&&x<=B?(k+1)*Math.pow(x,k)/Math.pow(B,k+1):0;};
+    EXc=(k+1)*B/(k+2);EX2c=(k+1)*B*B/(k+3);x1=B*1.12;ymax=f(B);
+    var fn=k===1?'2x/'+B+'²':'3x²/'+B+'³';
+    ftxt='f(x) = '+fn+' for 0 ≤ x ≤ '+B;
+    i1='∫₀^'+B+' x·'+fn+' dx = ('+(k+1)+'/'+Math.pow(B,k+1)+')·'+B+'^'+(k+2)+'/'+(k+2);
+    i2='∫₀^'+B+' x²·'+fn+' dx = ('+(k+1)+'/'+Math.pow(B,k+1)+')·'+B+'^'+(k+3)+'/'+(k+3);
+  } else if(fam==='tri'){
+    B=pick([2,3,4,6]);
+    f=function(x){return x>=0&&x<=B?2*(B-x)/(B*B):0;};
+    EXc=B/3;EX2c=B*B/6;x1=B*1.12;ymax=2/B;
+    ftxt='f(x) = 2('+B+' − x)/'+B+'² for 0 ≤ x ≤ '+B;
+    i1='∫₀^'+B+' x·2('+B+' − x)/'+B+'² dx = (2/'+B+'²)('+B+'³/2 − '+B+'³/3)';
+    i2='∫₀^'+B+' x²·2('+B+' − x)/'+B+'² dx = (2/'+B+'²)('+B+'⁴/3 − '+B+'⁴/4)';
+  } else {
+    lam=pick([0.5,1,2]);var L1=lam===1?'':String(lam);
+    f=function(x){return x>=0?lam*Math.exp(-lam*x):0;};
+    EXc=1/lam;EX2c=2/(lam*lam);x1=5/lam;ymax=lam;
+    ftxt='f(x) = '+L1+'e^(−'+L1+'x) for x ≥ 0';
+    i1='∫₀^∞ x·'+L1+'e^(−'+L1+'x) dx = 1/'+lam+'   (integration by parts, or the exponential mean)';
+    i2='∫₀^∞ x²·'+L1+'e^(−'+L1+'x) dx = 2/'+lam+'²   (by parts twice)';
+  }
+  var Vc=EX2c-EXc*EXc,sdc=Math.sqrt(Vc),ELc=a*EXc+b,VLc=a*a*Vc;
+  return {
+    text:'A continuous random variable X has pdf '+ftxt+', and 0 elsewhere. Find E(X), Var(X), E('+lin+') and Var('+lin+').',
+    pills:[ftxt],
+    steps:[
+      S('Expected value from the pdf','E(X) = ∫ x·f(x) dx over the support. The integral replaces the sum.',i1,'E(X) = '+fx(EXc,4)),
+      S('E(X²) by LOTUS','E(g(X)) = ∫ g(x)f(x) dx. Take g(x) = x², with no need to find the pdf of X².',i2,'E(X²) = '+fx(EX2c,4)),
+      S('Variance','Var(X) = E(X²) − [E(X)]².','Var(X) = '+fx(EX2c,4)+' − ('+fx(EXc,4)+')² = '+fx(Vc,4),'Var(X) = '+fx(Vc,4)+',  SD = '+fx(sdc,4)),
+      S('Linear change','E(aX + b) = aE(X) + b and Var(aX + b) = a²Var(X). The shift b does not affect the variance.','E('+lin+') = '+pm(a)+'('+fx(EXc,4)+') '+sgnStr(b)+' '+Math.abs(b)+'\nVar('+lin+') = ('+pm(a)+')²('+fx(Vc,4)+')','E = '+fx(ELc,4)+',   Var = '+fx(VLc,4))
+    ],
+    draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,{x0:0,x1:x1,ymax:ymax,ticks:niceTicks(0,x1,7),curves:[{f:f,color:'accent',lw:2.6,from:0,x0:0,x1:fam==='exp'?x1:B}],shades:[],vlines:[{x:EXc,label:'E(X)',color:'warn',from:1},{x:EXc-sdc,label:'−SD',color:'ink3',from:3},{x:EXc+sdc,label:'+SD',color:'ink3',from:3}],label:{text:'Var(X) = '+fx(Vc,3),from:3},title:'pdf f(x)'});},
+    chk:{kind:'cont',f:f,x1:x1,EX:EXc,EX2:EX2c,V:Vc,EL:ELc,VL:VLc,a:a,b:b}
+  };
+}
+
+/* ---- continuous joint pdf: marginals, probabilities, conditioning ---- */
+function drawJpdf(ctx,W,H,s,C,q){
+  var a=q.a,b=q.b,P=plot(W,H,{x0:0,x1:a,y0:0,y1:b,l:34,r:64,t:76,b:34});
+  var nx=44,ny=30,i,j;
+  for(i=0;i<nx;i++)for(j=0;j<ny;j++){
+    var x=(i+0.5)/nx*a,y=(j+0.5)/ny*b;if(!q.inside(x,y))continue;
+    var X0=P.X(i/nx*a),X1=P.X((i+1)/nx*a),Y1=P.Y(j/ny*b),Y0=P.Y((j+1)/ny*b);
+    ctx.fillStyle=C.a('accent',0.12+0.6*q.f(x,y)/q.fmax);ctx.fillRect(X0,Y0,X1-X0+0.6,Y1-Y0+0.6);
+    if(s>=3&&q.region(x,y)){ctx.fillStyle=C.a('good',0.4);ctx.fillRect(X0,Y0,X1-X0+0.6,Y1-Y0+0.6);}
+  }
+  ctx.save();ctx.strokeStyle=C.ink3;ctx.lineWidth=1.2;ctx.beginPath();
+  if(q.tri){ctx.moveTo(P.X(0),P.Y(0));ctx.lineTo(P.X(a),P.Y(0));ctx.lineTo(P.X(a),P.Y(b));ctx.closePath();}
+  else ctx.rect(P.X(0),P.Y(b),P.X(a)-P.X(0),P.Y(0)-P.Y(b));
+  ctx.stroke();ctx.restore();
+  axisX(ctx,P,C,niceTicks(0,a,5));
+  niceTicks(0,b,4).forEach(function(v){T(ctx,nz(v),P.l-6,P.Y(v)+4,C.ink3,10.5,'right');});
+  T(ctx,'x',P.W-P.r+6,P.Y(0)+4,C.ink3,11,'left',600);T(ctx,'y',P.l-6,P.t-4,C.ink3,11,'right',600);
+  if(s>=2){
+    var mx=0,my=0;for(i=0;i<=60;i++){mx=Math.max(mx,q.fX(a*i/60));my=Math.max(my,q.fY(b*i/60));}
+    ctx.save();ctx.strokeStyle=C.sky;ctx.lineWidth=2;ctx.beginPath();
+    for(i=0;i<=60;i++){var xx=a*i/60,yy=P.t-6-q.fX(xx)/mx*30;if(i)ctx.lineTo(P.X(xx),yy);else ctx.moveTo(P.X(xx),yy);}
+    ctx.stroke();ctx.beginPath();
+    for(j=0;j<=60;j++){var y2=b*j/60,x2=P.W-P.r+8+q.fY(y2)/my*46;if(j)ctx.lineTo(x2,P.Y(y2));else ctx.moveTo(x2,P.Y(y2));}
+    ctx.stroke();ctx.restore();
+  }
+  if(s>=4&&q.y0!==undefined){ctx.save();ctx.strokeStyle=C.warn;ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(P.X(0),P.Y(q.y0));ctx.lineTo(P.X(a),P.Y(q.y0));ctx.stroke();ctx.restore();TB(ctx,C,'y = '+nz(q.y0),P.X(0)+4,P.Y(q.y0)-5,C.warn,10.5,'left',600);}
+  if(s>=5){ctx.save();ctx.strokeStyle=C.good;ctx.lineWidth=2;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(P.X(q.EX),P.Y(0));ctx.lineTo(P.X(q.EX),P.Y(b));ctx.stroke();ctx.restore();TB(ctx,C,'E(X)',P.X(q.EX),P.t+12,C.good,11,'center',700);}
+  T(ctx,q.fl,P.l+2,17,C.ink2,12,'left',600);
+  if(s>=1)T(ctx,'c = '+fx(q.c,4),W-P.r,17,C.accent,13,'right',700);
+  if(q.res[s])T(ctx,q.res[s],P.l+2,36,s>=6?(q.indep?C.good:C.bad):C.accent,12,'left',700);
+}
+function genJpdf(){
+  var fam=pick(['sum','prod','tri']),a,b,c,f,inside,fX,fY,fl,dom,s0,t0,y0,Pst,cond,EX,region,fmax,tri=false,evTxt,res,steps,indep;
+  if(fam==='tri'){
+    var B=pick([1,2,3,4]);a=B;b=B;c=2/(B*B);tri=true;
+    s0=rd(B*pick([0.75,0.9]),2);y0=rd(B*pick([0.25,0.5]),2);
+    f=function(){return c;};inside=function(x,y){return y<x;};
+    fX=function(x){return c*x;};fY=function(y){return c*(B-y);};
+    Pst=s0*s0/(B*B);cond=(s0-y0)/(B-y0);EX=2*B/3;indep=false;fmax=c;
+    region=function(x){return x<s0;};
+    fl='f(x, y) = c on 0 < y < x < '+B;dom='the triangle 0 < y < x < '+B;
+    evTxt='P(X < '+nz(s0)+')';
+    steps=[
+      S('Normalize over the triangle','The support is the triangle 0 < y < x < '+B+', whose area is '+B+'²/2. A constant pdf times its area must equal 1.','c·'+B+'²/2 = 1','c = 2/'+B*B+' = '+fx(c,4)),
+      S('Marginals: watch the limits','For a fixed x, y runs from 0 up to the diagonal y = x. For a fixed y, x runs from y across to '+B+'.','f_X(x) = ∫₀^x c dy = c·x = '+fx(c,4)+'x   (0 < x < '+B+')\nf_Y(y) = ∫_y^'+B+' c dx = c('+B+' − y)   (0 < y < '+B+')'),
+      S('Probability from the marginal','P(X < s) only needs f_X, so integrate it from 0 to s (green).','P(X < '+nz(s0)+') = ∫₀^'+nz(s0)+' c·x dx = c·'+nz(s0)+'²/2 = '+nz(s0)+'²/'+B+'²','P = '+fx(Pst,4)),
+      S('Conditional pdf','Fix y = '+nz(y0)+' (dashed line). Along it the pdf is constant, so X is uniform on ('+nz(y0)+', '+B+').','f(x | Y = '+nz(y0)+') = c / f_Y('+nz(y0)+') = 1/('+B+' − '+nz(y0)+') on ('+nz(y0)+', '+B+')\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ('+nz(s0)+' − '+nz(y0)+')/('+B+' − '+nz(y0)+')','P = '+fx(cond,4)),
+      S('Expectation by conditioning','E(X) = E[ E(X | Y) ]. A uniform on (y, '+B+') has mean (y + '+B+')/2, which is then averaged over f_Y.','E(X | Y = y) = (y + '+B+')/2\nE(X) = ∫₀^'+B+' ((y + '+B+')/2)·c('+B+' − y) dy = 2·'+B+'/3\nCheck: ∫ x·f_X(x) dx gives the same.','E(X) = '+fx(EX,4)),
+      S('Independence','Independent variables need a rectangular support. Here f = 0 when y > x, yet f_X(x)f_Y(y) > 0 there, so the product rule fails.','','Not independent','bad')
+    ];
+    res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)','P(X < '+nz(s0)+') = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'not independent'];
+  } else {
+    a=pick([2,3,4]);b=pick([1,2,3]);
+    s0=rd(a*pick([0.5,0.75]),2);t0=rd(b*pick([0.5,0.75]),2);y0=rd(b*pick([0.25,0.5]),2);
+    region=function(x,y){return x<s0&&y<t0;};evTxt='P(X < '+nz(s0)+', Y < '+nz(t0)+')';
+    dom='0 ≤ x ≤ '+a+', 0 ≤ y ≤ '+b;
+    if(fam==='sum'){
+      c=2/(a*b*(a+b));f=function(x,y){return c*(x+y);};inside=function(){return true;};
+      fX=function(x){return c*(b*x+b*b/2);};fY=function(y){return c*(a*a/2+a*y);};
+      Pst=c*(s0*s0*t0/2+s0*t0*t0/2);var den=a*a/2+a*y0;cond=(s0*s0/2+y0*s0)/den;
+      EX=c*(a*a*a*b/3+a*a*b*b/4);indep=false;fmax=c*(a+b);fl='f(x, y) = c(x + y)';
+      var fa=f(a/2,b/2),fp=fX(a/2)*fY(b/2);
+      steps=[
+        S('Normalize over the rectangle','The total volume under the surface must be 1.','∫₀^'+b+' ∫₀^'+a+' c(x + y) dx dy = c·'+a+'·'+b+'·'+(a+b)+'/2 = 1','c = 2/'+a*b*(a+b)+' = '+fx(c,4)),
+        S('Marginals: integrate out the other variable','f_X(x) = ∫ f(x, y) dy over y, and f_Y(y) = ∫ f(x, y) dx over x.','f_X(x) = ∫₀^'+b+' c(x + y) dy = '+fx(c*b,4)+'x + '+fx(c*b*b/2,4)+'   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c(x + y) dx = '+fx(c*a*a/2,4)+' + '+fx(c*a,4)+'y   (0 ≤ y ≤ '+b+')'),
+        S('Probability over a region','Integrate the pdf over the region (green).',evTxt+' = ∫₀^'+nz(s0)+' ∫₀^'+nz(t0)+' c(x + y) dy dx = c('+nz(s0)+'²·'+nz(t0)+'/2 + '+nz(s0)+'·'+nz(t0)+'²/2)','P = '+fx(Pst,4)),
+        S('Conditional pdf','f(x | y) = f(x, y)/f_Y(y). Fix y = '+nz(y0)+' (dashed line), then integrate over x.','f(x | Y = '+nz(y0)+') = (x + '+nz(y0)+')/'+nz(rd(den,4))+'\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = ('+nz(s0)+'²/2 + '+nz(y0)+'·'+nz(s0)+')/'+nz(rd(den,4)),'P = '+fx(cond,4)),
+        S('Expectation by conditioning','E(X) = E[ E(X | Y) ]. First E(X | Y = y) = ∫ x f(x | y) dx, then average over f_Y.','E(X | Y = y) = ('+nz(rd(a*a*a/3,4))+' + '+nz(rd(a*a/2,4))+'y)/('+nz(rd(a*a/2,4))+' + '+a+'y)\nE(X) = ∫₀^'+b+' E(X | Y = y) f_Y(y) dy = c('+a+'³·'+b+'/3 + '+a+'²·'+b+'²/4)\nCheck: ∫ x·f_X(x) dx gives the same.','E(X) = '+fx(EX,4)),
+        S('Independence','Independent variables need f(x, y) = f_X(x)f_Y(y) everywhere. One failing point is enough.','At ('+nz(a/2)+', '+nz(b/2)+'):  f = '+fx(fa,4)+'  but  f_X·f_Y = '+fx(fp,4),'Not independent','bad')
+      ];
+      res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)',evTxt+' = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'not independent'];
+    } else {
+      c=4/(a*a*b*b);f=function(x,y){return c*x*y;};inside=function(){return true;};
+      fX=function(x){return 2*x/(a*a);};fY=function(y){return 2*y/(b*b);};
+      Pst=(s0/a)*(s0/a)*(t0/b)*(t0/b);cond=(s0/a)*(s0/a);EX=2*a/3;indep=true;fmax=c*a*b;fl='f(x, y) = c·x·y';
+      steps=[
+        S('Normalize over the rectangle','The pdf factors into an x part and a y part, so the double integral is a product.','∫₀^'+b+' ∫₀^'+a+' c·x·y dx dy = c·('+a+'²/2)('+b+'²/2) = 1','c = 4/'+(a*a*b*b)+' = '+fx(c,4)),
+        S('Marginals: integrate out the other variable','Each marginal keeps only its own factor, normalized.','f_X(x) = ∫₀^'+b+' c·x·y dy = c·x·'+b+'²/2 = 2x/'+a*a+'   (0 ≤ x ≤ '+a+')\nf_Y(y) = ∫₀^'+a+' c·x·y dx = 2y/'+b*b+'   (0 ≤ y ≤ '+b+')'),
+        S('Probability over a region','Integrate over the region (green). Because the pdf factors, so does the probability.',evTxt+' = c·('+nz(s0)+'²/2)('+nz(t0)+'²/2) = ('+nz(s0)+'/'+a+')²('+nz(t0)+'/'+b+')²','P = '+fx(Pst,4)),
+        S('Conditional pdf','f(x | y) = f(x, y)/f_Y(y). The y cancels, so conditioning on Y changes nothing.','f(x | Y = '+nz(y0)+') = 2x/'+a*a+' = f_X(x)\nP(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+nz(s0)+'²/'+a+'²','P = '+fx(cond,4)),
+        S('Expectation by conditioning','E(X | Y = y) = ∫ x·2x/'+a*a+' dx = 2·'+a+'/3 for every y, so averaging over Y leaves it unchanged.','E(X) = E[ E(X | Y) ] = 2·'+a+'/3','E(X) = '+fx(EX,4)),
+        S('Independence','The pdf equals f_X(x)·f_Y(y) on a rectangle, so the variables are independent.','c·x·y = (2x/'+a*a+')(2y/'+b*b+')','Independent','good')
+      ];
+      res=['','c = '+fx(c,4),'sky curves: marginals f_X (top), f_Y (right)',evTxt+' = '+fx(Pst,4),'P(X < '+nz(s0)+' | Y = '+nz(y0)+') = '+fx(cond,4),'E(X) = '+fx(EX,4),'independent'];
+    }
+  }
+  var evMore=fam==='tri'?'':'';
+  return {
+    text:'The joint pdf of (X, Y) is '+fl+' for '+dom+', and 0 elsewhere. Find c, the marginal pdfs, '+evTxt+', P(X < '+nz(s0)+' | Y = '+nz(y0)+'), and E(X) using E(X) = E[E(X | Y)]. Are X and Y independent?',
+    pills:[fl,dom],
+    steps:steps,
+    draw:function(ctx,W,H,s,C){drawJpdf(ctx,W,H,s,C,{a:a,b:b,c:c,f:f,inside:inside,fmax:fmax,fX:fX,fY:fY,region:region,tri:tri,y0:y0,EX:EX,res:res,fl:fl,indep:indep});},
+    chk:{a:a,b:b,c:c,f:f,inside:inside,fX:fX,fY:fY,s0:s0,t0:t0,y0:y0,Pst:Pst,cond:cond,EX:EX,tri:tri}
+  };
+}
+
+function genIter(){
+  var vv=pick([0,1,2,3,4]);
+  if(vv===2)return genIterBin();
+  if(vv===3)return genIterPE();
+  if(vv===4)return genIterNN();
+  if(vv===0){
     var lam=pick([3,4,5,6,8,10]),EY=lam/2,Ew=(lam+lam*lam)/12,Vb=lam/4,VY=Ew+Vb;
     var hi=Math.ceil(lam+4*Math.sqrt(lam)),xs=[];for(var i=0;i<=hi;i++)xs.push(i);
     return {
@@ -908,25 +1146,25 @@ function genCheb(){
   var v=pick(['two','inner','lln','markov']);
   if(v==='two'){
     var mu=pick([50,75,100]),sd=pick([3,4,5,10]),kk=pick([1.5,2,2.5,3,4]),d=rd(kk*sd,2),ans=1/(kk*kk);
-    return {text:'X has mean '+mu+' and standard deviation '+sd+' (distribution unknown). Use Chebyshev’s inequality to bound P(|X − '+mu+'| ≥ '+nz(d)+').',pills:['μ = '+mu,'σ = '+sd,'d = '+nz(d)],
-      steps:[S('State the inequality','For any distribution, P(|X − μ| ≥ kσ) ≤ 1/k².'),S('Find k','Express the distance in SD units.','k = d/σ = '+nz(d)+'/'+sd+' = '+nz(kk)),S('Bound','','P ≤ 1/k² = 1/'+nz(rd(kk*kk,4)),'P(|X − '+mu+'| ≥ '+nz(d)+') ≤ '+fx(ans,4),'warn')],
+    return {text:'X has mean '+mu+' and standard deviation '+sd+', and its distribution is unknown. Find an upper bound for P(|X − '+mu+'| ≥ '+nz(d)+').',pills:['μ = '+mu,'σ = '+sd,'d = '+nz(d)],
+      steps:[S('Which inequality?','The distribution is unknown, only a mean and a standard deviation are given, and we want a bound on how far X strays from its mean. That is Chebyshev, which holds for any distribution. Markov would ignore the standard deviation.','P(|X − μ| ≥ kσ) ≤ 1/k²'),S('Find k','Express the distance in SD units.','k = d/σ = '+nz(d)+'/'+sd+' = '+nz(kk)),S('Bound','','P ≤ 1/k² = 1/'+nz(rd(kk*kk,4)),'P(|X − '+mu+'| ≥ '+nz(d)+') ≤ '+fx(ans,4),'warn')],
       draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:mu-4.2*sd,x1:mu+4.2*sd,mu:mu,muLabel:'μ = '+mu,marks:[{x:mu-d,label:nz(rd(mu-d,2))},{x:mu+d,label:nz(rd(mu+d,2))}],tails:[[mu-5*sd-d,mu-d],[mu+d,mu+5*sd+d]],tailLabel:'',head:'P(|X − μ| ≥ d) ≤ '+fx(ans,4),inner:null});}};
   }
   if(v==='inner'){
     var mu2=pick([50,75,100]),sd2=pick([3,4,5,10]),dd=pick([2,2.5,3,4])*sd2,lb=1-1/Math.pow(dd/sd2,2);
-    return {text:'X has mean '+mu2+' and variance '+sd2*sd2+'. Use Chebyshev’s inequality to find a lower bound for P('+nz(rd(mu2-dd,2))+' < X < '+nz(rd(mu2+dd,2))+').',pills:['μ = '+mu2,'σ² = '+sd2*sd2],
-      steps:[S('Recenter the interval','The interval is μ ± '+nz(dd)+', so it is the event |X − μ| < '+nz(dd)+'.','k = '+nz(dd)+'/'+sd2+' = '+nz(dd/sd2)),S('Complement of the tail bound','Chebyshev bounds the outside, so the inside is at least 1 minus that.','P(inside) ≥ 1 − 1/k² = 1 − 1/'+nz(rd(Math.pow(dd/sd2,2),4)),'P ≥ '+fx(lb,4),'warn')],
-      draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:mu2-4.4*sd2,x1:mu2+4.4*sd2,mu:mu2,muLabel:'μ = '+mu2,marks:[{x:mu2-dd,label:nz(rd(mu2-dd,2))},{x:mu2+dd,label:nz(rd(mu2+dd,2))}],inner:[mu2-dd,mu2+dd],innerLabel:'≥ '+fx(lb,3),th:{mean:1,marks:1,region:2}});}};
+    return {text:'X has mean '+mu2+' and variance '+sd2*sd2+', and its distribution is unknown. Find a lower bound for P('+nz(rd(mu2-dd,2))+' < X < '+nz(rd(mu2+dd,2))+').',pills:['μ = '+mu2,'σ² = '+sd2*sd2],
+      steps:[S('Which inequality?','The distribution is unknown and a mean and a variance are given, so the tool is Chebyshev. A lower bound on an interval comes from the complement of its tail bound.','P(|X − μ| ≥ kσ) ≤ 1/k²'),S('Recenter the interval','The interval is μ ± '+nz(dd)+', so it is the event |X − μ| < '+nz(dd)+'.','k = '+nz(dd)+'/'+sd2+' = '+nz(dd/sd2)),S('Complement of the tail bound','Chebyshev bounds the outside, so the inside is at least 1 minus that.','P(inside) ≥ 1 − 1/k² = 1 − 1/'+nz(rd(Math.pow(dd/sd2,2),4)),'P ≥ '+fx(lb,4),'warn')],
+      draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:mu2-4.4*sd2,x1:mu2+4.4*sd2,mu:mu2,muLabel:'μ = '+mu2,marks:[{x:mu2-dd,label:nz(rd(mu2-dd,2))},{x:mu2+dd,label:nz(rd(mu2+dd,2))}],inner:[mu2-dd,mu2+dd],innerLabel:'≥ '+fx(lb,3)});}};
   }
   if(v==='lln'){
     var sg=pick([3,4,5,8,10]),E=pick([0.5,1,2]),conf=pick([0.9,0.95,0.99]),n=Math.ceil(sg*sg/((1-conf)*E*E));
-    return {text:'Observations have standard deviation '+sg+'. How large must n be so that, by Chebyshev, P(|X̄ − μ| < '+E+') ≥ '+conf+'?',pills:['σ = '+sg,'E = '+E,'confidence '+conf],
-      steps:[S('Variance of the mean','X̄ has mean μ and variance σ²/n.','Var(X̄) = '+(sg*sg)+'/n'),S('Chebyshev for X̄','P(|X̄ − μ| ≥ E) ≤ Var(X̄)/E², so the inside has probability at least 1 − σ²/(nE²).','1 − '+(sg*sg)+'/(n·'+(E*E)+') ≥ '+conf),S('Solve for n','Rearrange, then round up to a whole number.','n ≥ '+(sg*sg)+' / ('+nz(rd(1-conf,4))+' × '+(E*E)+') = '+nz(rd(sg*sg/((1-conf)*E*E),3)),'n = '+n,'warn')],
+    return {text:'Observations have standard deviation '+sg+' and an unknown distribution. How large must n be to guarantee that P(|X̄ − μ| < '+E+') ≥ '+conf+'?',pills:['σ = '+sg,'E = '+E,'confidence '+conf],
+      steps:[S('Which inequality?','The distribution is unknown and only the standard deviation is given, so Chebyshev is the only tool. Apply it to the sample mean X̄, which has mean μ and variance σ²/n.','Var(X̄) = '+(sg*sg)+'/n'),S('Chebyshev for X̄','P(|X̄ − μ| ≥ E) ≤ Var(X̄)/E², so the inside has probability at least 1 − σ²/(nE²).','1 − '+(sg*sg)+'/(n·'+(E*E)+') ≥ '+conf),S('Solve for n','Rearrange, then round up to a whole number.','n ≥ '+(sg*sg)+' / ('+nz(rd(1-conf,4))+' × '+(E*E)+') = '+nz(rd(sg*sg/((1-conf)*E*E),3)),'n = '+n,'warn')],
       draw:function(ctx,W,H,s,C){drawLLN(ctx,W,H,s,C,{n:n,v:sg*sg,E:E,conf:conf});}};
   }
   var m=pick([20,40,50,100]),tt=m*pick([1.5,2,2.5,3,4]);
-  return {text:'X is a nonnegative random variable with mean '+m+'. Use Markov’s inequality to bound P(X > '+nz(tt)+').',pills:['E(X) = '+m,'t = '+nz(tt)],
-    steps:[S('State the inequality','For X ≥ 0 and t > 0, P(X ≥ t) ≤ E(X)/t. It needs only the mean.'),S('Plug in','','P(X > '+nz(tt)+') ≤ '+m+'/'+nz(tt),'P ≤ '+fx(m/tt,4),'warn')],
+  return {text:'X is a nonnegative random variable with mean '+m+', and nothing else is known. Find an upper bound for P(X > '+nz(tt)+').',pills:['E(X) = '+m,'t = '+nz(tt)],
+    steps:[S('Which inequality?','X cannot be negative and only its mean is known, with no variance, so use Markov. Chebyshev would need a variance.','P(X ≥ t) ≤ E(X)/t'),S('Plug in','','P(X > '+nz(tt)+') ≤ '+m+'/'+nz(tt),'P ≤ '+fx(m/tt,4),'warn')],
     draw:function(ctx,W,H,s,C){drawBound(ctx,W,H,s,C,{x0:0,x1:tt*1.6,mu:m,muLabel:'E(X) = '+m,marks:[{x:tt,label:'t = '+nz(tt)}],tails:[[tt,tt*2]],tailLabel:'≤ '+fx(m/tt,3),inner:null,th:{mean:1,marks:1,region:2}});}};
 }
 
@@ -1486,13 +1724,13 @@ function genPdfCdf(){
     ftext='f(x) = F′(x) = '+(a===2?'2x':'3x²')+'/'+b+'^'+a+' on (0, '+b+')';
     medTxt='(m/'+b+')^'+a+' = 0.5  ⇒  m = '+b+'·0.5^(1/'+a+')';
   } else {
-    lam=pick([0.5,1,2]);s0=pick([0.5,1]);t0=pick([2,3]);
+    lam=pick([0.5,1,2]);var L2=lam===1?'':String(lam);s0=pick([0.5,1]);t0=pick([2,3]);
     F=function(x){return x<=0?0:1-Math.exp(-lam*x);};
     f=function(x){return x>0?lam*Math.exp(-lam*x):0;};
     med=Math.LN2/lam;x1=4/lam;
-    Ftext='F(x) = 1 − e^(−'+lam+'x) for x ≥ 0';
-    ftext='f(x) = F′(x) = '+lam+'e^(−'+lam+'x) for x > 0';
-    medTxt='1 − e^(−'+lam+'m) = 0.5  ⇒  m = ln 2/'+lam;
+    Ftext='F(x) = 1 − e^(−'+L2+'x) for x ≥ 0';
+    ftext='f(x) = F′(x) = '+L2+'e^(−'+L2+'x) for x > 0';
+    medTxt='1 − e^(−'+L2+'m) = 0.5  ⇒  m = ln 2/'+lam;
   }
   var Pab=F(t0)-F(s0),ymax=0;
   for(var i=1;i<=200;i++)ymax=Math.max(ymax,f(x1*i/200));
@@ -1516,7 +1754,7 @@ var MODULES=[
   {id:'rv',label:'Random Variables',week:'Wk 3',blurb:'Normalizing a pmf or pdf, reading probabilities from a CDF table, and getting a pdf from a CDF.',types:[
     {id:'normd',label:'Normalize a pmf',gen:genNormD},{id:'normc',label:'Normalize a pdf',gen:genNormC},{id:'cdfd',label:'CDF table',gen:genCdfD},{id:'pdfcdf',label:'pdf from a CDF',gen:genPdfCdf}]},
   {id:'joint',label:'Joint & Moments',week:'Wk 4\u20135',blurb:'Joint pmf tables, covariance, conditional expectation and variance, variance of sums, Markov and Chebyshev.',types:[
-    {id:'joint',label:'Joint pmf table',gen:genJoint},{id:'iter',label:'Iterated E and Var',gen:genIter},{id:'varsum',label:'Variance of a sum',gen:genVarSum},{id:'cheb',label:'Markov & Chebyshev',gen:genCheb}]},
+    {id:'ev',label:'Expectation & variance',gen:genEV},{id:'joint',label:'Joint pmf table',gen:genJoint},{id:'jpdf',label:'Joint pdf (integrals)',gen:genJpdf},{id:'iter',label:'Iterated E and Var',gen:genIter},{id:'varsum',label:'Variance of a sum',gen:genVarSum},{id:'cheb',label:'Markov & Chebyshev',gen:genCheb}]},
   {id:'poisson',label:'Poisson & Exponential',week:'Wk 6\u20137',blurb:'Splitting and independence in Poisson processes, waiting times, memorylessness and minimum lifetimes.',types:[
     {id:'split',label:'Poisson splitting',gen:genSplit},{id:'indep',label:'Independent increments',gen:genIndep},{id:'nth',label:'n-th arrival (gamma)',gen:genNth},{id:'memoryless',label:'Memoryless',gen:genMemoryless},{id:'min',label:'Minimum of exponentials',gen:genMin}]},
   {id:'normal',label:'Normal & CLT',week:'Wk 6, 8',blurb:'Normal probabilities, sample means, sums, and the normal approximation to discrete counts.',types:[
@@ -1538,8 +1776,10 @@ var VARIANTS={
   'normal/sum':[['P(S > s)',/P\(S >/],['P(S < s)',/P\(S </]],
   'normal/disc':[['Binomial',/Bin\(/],['Poisson',/Poisson\(/]],
   'poisson/split':[['At least k',/at least/],['At most k',/at most/],['Exactly k',/exactly/]],
-  'joint/iter':[['Poisson then uniform',/Poisson/],['Uniform then exponential',/Uniform\[/]],
-  'joint/cheb':[['Bound a tail',/bound P\(\|X/],['Bound an interval',/lower bound for P\(/],['Sample size n',/How large must n be/],['Markov',/Markov/]],
+  'joint/iter':[['Poisson, then uniform',/Y is uniform on/],['Uniform, then exponential',/Y is exponential with rate u/],['Poisson, then binomial',/buys with probability/],['Exponential, then Poisson',/X ~ Poisson\(y\)/],['Normal, then normal',/X ~ N\(y/]],
+  'joint/ev':[['Discrete pmf',/discrete random variable/],['Continuous pdf',/continuous random variable/]],
+  'joint/jpdf':[['f = c(x + y)',/c\(x \+ y\)/],['f = c\u00B7x\u00B7y',/c\u00B7x\u00B7y/],['Uniform on a triangle',/triangle/]],
+  'joint/cheb':[['Bound a tail',/upper bound for P\(\|X/],['Bound an interval',/lower bound for P\(/],['Sample size n',/How large must n be/],['Markov',/nonnegative random variable/]],
   'sampling/s2':[['P(S² > c)',/P\(S² >/],['P(S² < c)',/P\(S² </]],
   'sampling/chisq':[['One chi-square',/^X ~ χ/],['Sum of two',/independent/]],
   'sampling/dist':[['2 directions',/each of 2 directions/],['3 directions',/each of 3 directions/]],
