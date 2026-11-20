@@ -1839,7 +1839,7 @@ var PROF_DONE=[
   ['Magnificent. I need a moment.','You’re making this professor very happy.','Textbook. And I have read the textbook.'],
   ['I can’t stop smiling. Someone get me a tissue.','Legend. They’ll name a p-value after you.','The exam won’t know what hit it.']
 ];
-var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! I’m proud of you. Excuse me, something is in my eye.','Level up! Top marks. I may cry on the whiteboard.'];
+var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! Excellent work. I’m proud of you.','Level up! Top marks. You’ve really earned this.'];
 var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I only cried a little. Let’s go.','Okay, that’s one. The sulking is over. Don’t do that again.'];
 function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
 function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
