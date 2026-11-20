@@ -221,6 +221,19 @@ body{font-size:17px; padding-left:max(20px,env(safe-area-inset-left,0px)); paddi
 
 .fine{font-size:12.5px}
 .hero h1{font-size:clamp(40px,6vw,76px)} .hero p{font-size:clamp(17px,2vw,22px)}
+.fwrap{display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; margin-top:7px}
+.fwrap .formula{margin-top:0; flex:1 1 260px; min-width:0}
+.fnote{flex:0 1 240px; min-width:190px; font-size:15px; line-height:1.5; color:var(--ink-2); border-left:3px solid #FFC53D; padding:2px 0 2px 12px}
+.fnote .fn-t{font-weight:700; color:var(--ink); margin-bottom:2px}
+.pills:empty{display:none}
+.pills .also{font-size:13px; color:var(--ink-3); align-self:center}
+mark.given{background:rgba(255,197,61,.5); color:inherit; border-radius:4px; padding:0 3px}
+.gtag{display:inline-block; margin:0 6px 0 4px; padding:0 8px; border:1.5px solid var(--edge); background:var(--surface-2); border-radius:8px; font:600 13px/1.55 var(--font-m); white-space:nowrap; vertical-align:baseline}
+.gtag.gonly i{margin-left:0}
+.gtag i{font-style:normal; font-family:var(--font-b,inherit); font-weight:500; color:var(--ink-3); margin-left:7px}
+.tip-row{margin-top:12px; display:flex; flex-wrap:wrap; gap:8px}
+.tipbtn{padding:6px 14px; font-size:14px}
+.tip-box{margin-top:10px; background:var(--surface-2); border:2px solid var(--edge); border-radius:12px; padding:12px 16px; font-size:17px; line-height:1.55}
 .easy-leg{margin-top:8px; font-size:14px; color:var(--ink-3)}
 .easy-note{background:var(--surface-2); border:2px dashed var(--edge); border-radius:12px; padding:12px 16px; font-size:17px; margin-bottom:14px}
 .btn[aria-pressed="true"]{background:#FFC53D; color:#111!important}
@@ -234,7 +247,7 @@ body{font-size:17px; padding-left:max(20px,env(safe-area-inset-left,0px)); paddi
     <div>
       <h1>STAT 271<br>Study Lab</h1>
       <p>Randomized practice with a picture for every step.</p>
-      <a class="btn" href="#stage">Start practicing</a> <button type="button" class="btn ghost" id="easyBtn" aria-pressed="false">Simpler words: off</button>
+      <a class="btn" href="#stage">Start practicing</a>
     </div>
   </header>
   <p class="fine">Built from the Week 1 to 10 slides, problem sets and midterms. Answers are computed in code, and your exam tables round to 3 or 4 decimals, so expect small differences.</p>
@@ -455,7 +468,7 @@ function drawDensity(ctx,W,H,s,C,d){
 }
 
 /* ================= step builder ================= */
-function S(t,b,f,a,k){return {t:t,b:b||'',f:f||'',a:a||'',k:k||'good'};}
+function S(t,b,f,a,k,n){return {t:t,b:b||'',f:f||'',a:a||'',k:k||'good',n:n||''};}
 var normalTicks=function(mu,sg){var o=[];for(var k=-3;k<=3;k++)o.push(rd(mu+k*sg,6));return o;};
 var zTicks=function(mu,sg){var o=[];for(var k=-3;k<=3;k++)o.push({x:mu+k*sg,label:String(k)});return o;};
 var xFmt=function(v){return nz(r2(v));};
@@ -723,7 +736,7 @@ function genDisc(){
   var xs=[];for(var q=Math.max(0,Math.round(mean-3.6*sd));q<=Math.round(mean+3.6*sd)&&(!bin||q<=n);q++)xs.push(q);
   var ztxt=kind==='btw'?'z₁ = ('+(a-0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc1,2)+'\nz₂ = ('+(b+0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc2,2):'z = ('+(kind==='le'?a+0.5:a-0.5)+' − '+nz(rd(mean,4))+')/'+nz(rd(sd,4))+' = '+fx(zc1,2);
   return {
-    story:'You are counting something that follows '+nm+'. Counts jump in whole steps, but when the numbers are big the steps blur into a smooth bell curve, so we use that curve as a shortcut. A whole-number count really covers half a step on each side, so we nudge the edge by 0.5 (the continuity correction). Estimate '+ev+', then compare with the exact answer.',
+    story:(bin?'Imagine '+n+' tries, and each try has a '+p+' chance of working (a Binomial). Adding up the exact chances would take forever, so we use a shortcut: with this many tries, the possible counts form a smooth bell shape, and we measure the area under the bell instead.':'Something happens at random, on average '+lam+' times per period (a Poisson). Adding up the exact chances would take forever, so we use a shortcut: with an average this big, the possible counts form a smooth bell shape, and we measure the area under the bell instead.')+' A whole-number count like '+a+' really takes up the stretch from '+(a-0.5)+' to '+(a+0.5)+' on the bell, so we move the edge by 0.5 (the continuity correction). How likely is it that the count is '+(kind==='le'?'at most '+a:kind==='ge'?'at least '+a:'between '+a+' and '+b+', both included')+'? That is '+ev+'. Then compare with the exact answer.',
     text:nm+'. Use the normal approximation with continuity correction to estimate '+ev+', then compare with the exact value.',
     pills:[nm,'μ = '+nz(rd(mean,4)),'σ = '+nz(rd(sd,4))],
     steps:[
@@ -1670,10 +1683,10 @@ function genTestZ(){
     text:thing+' claims a mean of '+mu0+'. A sample of n = '+n+' gives x̄ = '+nz(xb)+'. The population SD is known to be '+sg+'. Test H₀: μ = '+mu0+' against H₁: '+H1+' at α = '+alpha+'.',
     pills:['n = '+n,'x̄ = '+nz(xb),'σ = '+sg,'α = '+alpha,tail==='two'?'two-sided':'one-sided'],
     steps:[
-      S('State the hypotheses','The alternative decides the tail: ≠ is two-sided, > looks right, < looks left. σ is known, so use a z test.','H₀: μ = '+mu0+'\nH₁: '+H1),
-      S('Test statistic','Measure how many standard errors x̄ is from the null value.','z = (x̄ − μ₀)/(σ/√n) = ('+nz(xb)+' − '+mu0+')/('+sg+'/√'+n+') = '+nz(rd(xb-mu0,4))+'/'+nz(rd(se,4)),'z = '+fx(z,2)),
-      S('Rejection region at α = '+alpha,'Put α in the tail'+(tail==='two'?'s (α/2 each)':'')+' where H₁ points. These are the red areas.','Reject H₀ if '+rr),
-      S('p-value and decision','The p-value is the probability, under H₀, of a result at least this extreme (blue). Reject when p ≤ α. The region rule and the p-value rule always agree.',pform+' = '+fx(p,4)+'\np '+(p<=alpha?'≤':'>')+' α = '+alpha,dec,reject?'bad':'warn')
+      S('State the hypotheses','The alternative decides the tail: ≠ is two-sided, > looks right, < looks left. σ is known, so use a z test.','H₀: μ = '+mu0+'\nH₁: '+H1,'','good','What H₀ and H₁ mean\nH₀ (null) = the claim being tested: the average really is '+mu0+'.\nH₁ (alternative) = what you suspect instead: the average is '+(tail==='two'?'different from ':tail==='upper'?'bigger than ':'smaller than ')+mu0+', so '+(tail==='two'?'both tails count':tail==='upper'?'only the right tail counts':'only the left tail counts')+'.\nα = '+alpha+' is the false-alarm chance you accept.'),
+      S('Test statistic','Measure how many standard errors x̄ is from the null value.','z = (x̄ − μ₀)/(σ/√n) = ('+nz(xb)+' − '+mu0+')/('+sg+'/√'+n+') = '+nz(rd(xb-mu0,4))+'/'+nz(rd(se,4)),'z = '+fx(z,2),'good','Formula used: z test statistic\nz = (x̄ − μ₀)/(σ/√n)\nx̄ = '+nz(xb)+' (sample average)\nμ₀ = '+mu0+' (value in H₀)\nσ = '+sg+' (known SD of one item)\nn = '+n+' (items tested)\nσ/√n = '+nz(rd(se,4))+' (standard error)'),
+      S('Rejection region at α = '+alpha,'Put α in the tail'+(tail==='two'?'s (α/2 each)':'')+' where H₁ points. These are the red areas.','Reject H₀ if '+rr,'','good','Where the cutoff comes from\nα = '+alpha+(tail==='two'?' is split over two tails, '+alpha/2+' each':' goes all in one tail')+'\nz* = '+fx(zc,3)+' (z-table value for that tail area)\nH₁ is '+H1+', so '+(tail==='two'?'both tails count':tail==='upper'?'the right tail counts':'the left tail counts')),
+      S('p-value and decision','The p-value is the probability, under H₀, of a result at least this extreme (blue). Reject when p ≤ α. The region rule and the p-value rule always agree.',pform+' = '+fx(p,4)+'\np '+(p<=alpha?'≤':'>')+' α = '+alpha,dec,reject?'bad':'warn','What the numbers mean\np = '+fx(p,4)+' (chance of a result this extreme if H₀ is true)\nα = '+alpha+' (false alarm you accept)\n'+(p<=alpha?'p ≤ α, so reject H₀':'p > α, so do not reject H₀'))
     ],
     draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,testCfg('z',0,z,tail,alpha,zc,p,reject,{stat:2,crit:3,p:4}));}
   };
@@ -1692,10 +1705,10 @@ function genTestT(){
     text:'A sample of n = '+n+' from a normal population has x̄ = '+nz(xb)+' and s = '+s0+'. Test H₀: μ = '+mu0+' against H₁: '+H1+' at α = '+alpha+'. The population SD is unknown.',
     pills:['n = '+n,'x̄ = '+nz(xb),'s = '+s0,'df = '+df,'α = '+alpha],
     steps:[
-      S('State the hypotheses','σ is unknown, so replace it with s and use a t test with n − 1 df.','H₀: μ = '+mu0+'\nH₁: '+H1),
-      S('Test statistic','','t = (x̄ − μ₀)/(s/√n) = ('+nz(xb)+' − '+mu0+')/('+s0+'/√'+n+') = '+nz(rd(xb-mu0,4))+'/'+nz(rd(se,4)),'t = '+fx(t,3)),
-      S('Critical value from the t-table','Use the t critical value with '+df+' df, not the z value. Heavier tails mean a larger cutoff.',(tail==='two'?'t_('+alpha/2+', '+df+')':'t_('+alpha+', '+df+')')+' = '+fx(tc,3)+'\nReject H₀ if '+rr),
-      S('p-value and decision','A table can only bracket p. The exact value is below. Reject when p ≤ α.','p = '+fx(p,4)+'\np '+(p<=alpha?'≤':'>')+' α = '+alpha,dec,reject?'bad':'warn')
+      S('State the hypotheses','σ is unknown, so replace it with s and use a t test with n − 1 df.','H₀: μ = '+mu0+'\nH₁: '+H1,'','good','What H₀ and H₁ mean\nH₀ (null) = the claim being tested: the average really is '+mu0+'.\nH₁ (alternative) = what you suspect instead: the average is '+(tail==='two'?'different from ':tail==='upper'?'bigger than ':'smaller than ')+mu0+', so '+(tail==='two'?'both tails count':tail==='upper'?'only the right tail counts':'only the left tail counts')+'.\nα = '+alpha+' is the false-alarm chance you accept.'),
+      S('Test statistic','','t = (x̄ − μ₀)/(s/√n) = ('+nz(xb)+' − '+mu0+')/('+s0+'/√'+n+') = '+nz(rd(xb-mu0,4))+'/'+nz(rd(se,4)),'t = '+fx(t,3),'good','Formula used: t test statistic\nt = (x̄ − μ₀)/(s/√n)\nx̄ = '+nz(xb)+' (sample average)\nμ₀ = '+mu0+' (value in H₀)\ns = '+s0+' (SD estimated from the sample)\nn = '+n+' (items tested)\ns/√n = '+nz(rd(se,4))+' (standard error)\ndf = n − 1 = '+df),
+      S('Critical value from the t-table','Use the t critical value with '+df+' df, not the z value. Heavier tails mean a larger cutoff.',(tail==='two'?'t_('+alpha/2+', '+df+')':'t_('+alpha+', '+df+')')+' = '+fx(tc,3)+'\nReject H₀ if '+rr,'','good','Where the cutoff comes from\nα = '+alpha+(tail==='two'?' is split over two tails, '+alpha/2+' each':' goes all in one tail')+'\ndf = '+df+' (degrees of freedom)\nt* = '+fx(tc,3)+' (t-table value for that tail area and df)'),
+      S('p-value and decision','A table can only bracket p. The exact value is below. Reject when p ≤ α.','p = '+fx(p,4)+'\np '+(p<=alpha?'≤':'>')+' α = '+alpha,dec,reject?'bad':'warn','What the numbers mean\np = '+fx(p,4)+' (chance of a result this extreme if H₀ is true)\nα = '+alpha+' (false alarm you accept)\n'+(p<=alpha?'p ≤ α, so reject H₀':'p > α, so do not reject H₀'))
     ],
     draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,testCfg('t',df,t,tail,alpha,tc,p,reject,{stat:2,crit:3,p:4}));}
   };
@@ -1723,11 +1736,11 @@ function genPower(){
     text:'A sample of n = '+n+' is drawn from a normal population with known σ = '+sg+'. A level α = '+alpha+' z-test of H₀: μ = '+mu0+' against H₁: '+H1+' is used. If the true mean is '+nz(mu1)+', find the probability of a Type II error and the power.',
     pills:['n = '+n,'σ = '+sg,'α = '+alpha,'true μ = '+nz(mu1)],
     steps:[
-      S('Write the rejection rule','Type I error is rejecting a true H₀, and α is its probability. Type II is failing to reject a false H₀, with probability β.',two?'Reject if |z| > '+fx(zc,2)+'   (z = ('+'x̄ − '+mu0+')/'+nz(rd(se,4))+')':'Reject if z > '+fx(zc,2)+(H1.indexOf('<')>=0?' (flipped)':'')),
-      S('Convert to a cutoff on x̄','Solve the z rule for x̄. This is the red line in the picture, the boundary of the rejection region.',two?'c = '+mu0+' ± '+fx(zc,2)+'×'+nz(rd(se,4))+' = '+nz(c1)+' and '+nz(c2):'c = '+mu0+' + '+fx(zc,2)+'×'+nz(rd(se,4))+' = '+nz(c1)),
+      S('Write the rejection rule','Type I error is rejecting a true H₀, and α is its probability. Type II is failing to reject a false H₀, with probability β.',two?'Reject if |z| > '+fx(zc,2)+'   (z = ('+'x̄ − '+mu0+')/'+nz(rd(se,4))+')':'Reject if z > '+fx(zc,2)+(H1.indexOf('<')>=0?' (flipped)':''),'','good','What H₀ and H₁ mean\nH₀ (null) = the claim being tested: μ = '+mu0+'.\nH₁ (alternative) = what you suspect instead: '+H1+'.\nz* = '+fx(zc,2)+' is the z-table cutoff for α = '+alpha+(two?' (split over both tails)':'')+'.\nz = (x̄ − μ₀)/(σ/√n), with σ/√n = '+nz(rd(se,4))+'.'),
+      S('Convert to a cutoff on x̄','Solve the z rule for x̄. This is the red line in the picture, the boundary of the rejection region.',two?'c = '+mu0+' ± '+fx(zc,2)+'×'+nz(rd(se,4))+' = '+nz(c1)+' and '+nz(c2):'c = '+mu0+' + '+fx(zc,2)+'×'+nz(rd(se,4))+' = '+nz(c1),'','good','Formula used: cutoff on x̄\nc = μ₀ '+(two?'±':'+')+' z*·σ/√n\nμ₀ = '+mu0+' (value in H₀)\nz* = '+fx(zc,2)+' (z-table value)\nσ = '+sg+', n = '+n+'\nσ/√n = '+nz(rd(se,4))+' (standard error)'),
       S('Check α under H₀','The red area in the left curve is the chance of rejecting when μ = '+mu0+', which equals α by construction.','α = '+alpha),
-      S('Type II error under the true mean','Now center the curve at μ = '+nz(mu1)+'. β is the area where we do NOT reject (orange).',bform,'β = '+fx(beta,4),'warn'),
-      S('Power','Power is the chance of correctly rejecting a false H₀ (green). It rises with n, with the effect size and with α.','power = 1 − β = 1 − '+fx(beta,4),'power = '+fx(power,4),'good')
+      S('Type II error under the true mean','Now center the curve at μ = '+nz(mu1)+'. β is the area where we do NOT reject (orange).',bform,'β = '+fx(beta,4),'warn','Formula used: β from the true mean\nβ = chance x̄ lands on the “do not reject” side\ntrue μ = '+nz(mu1)+'\ncutoff c = '+nz(c1)+(two?' and '+nz(c2):'')+'\nσ/√n = '+nz(rd(se,4))+' (standard error)'),
+      S('Power','Power is the chance of correctly rejecting a false H₀ (green). It rises with n, with the effect size and with α.','power = 1 − β = 1 − '+fx(beta,4),'power = '+fx(power,4),'good','Formula used\npower = 1 − β\nβ = '+fx(beta,4)+' (chance of missing a real effect)\npower = '+fx(power,4)+' (chance of catching it)')
     ],
     draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,{x0:x0,x1:x1,ymax:f0(mu0),ticks:niceTicks(x0,x1,8),tickFmt:xFmt,curves:[{f:f0,color:'accent',lw:2.4,from:0},{f:f1,color:'sky',lw:2.4,from:0}],shades:sh,vlines:vl,label:{text:s>=5?'power = '+fx(power,4):'β = '+fx(beta,4),from:4,color:s>=5?'good':'warn'},title:'curves of x̄: left under H₀, right under the true mean'});}
   };
@@ -1742,7 +1755,7 @@ function genDuality(){
     text:'A '+pc+' confidence interval for μ is ('+fx(L,2)+', '+fx(U,2)+'). Without recomputing anything, decide whether a two-sided test of H₀: μ = '+nz(a)+' and a test of H₀: μ = '+nz(b)+' would reject at α = '+al+'.',
       pills:[pc+' CI','α = '+al,'('+fx(L,2)+', '+fx(U,2)+')'],
       steps:[
-        S('Test and interval are the same information','A two-sided test at level α rejects H₀: μ = μ₀ exactly when μ₀ falls outside the (1 − α) confidence interval.','CI level '+pc+'  ↔  α = '+al),
+        S('Test and interval are the same information','A two-sided test at level α rejects H₀: μ = μ₀ exactly when μ₀ falls outside the (1 − α) confidence interval.','CI level '+pc+'  ↔  α = '+al,'','good','What H₀ and H₁ mean\nH₀ (null) = the claimed average you test (here '+nz(a)+' or '+nz(b)+').\nH₁ (alternative) = the true average is different from that claim (two-sided).\nThe interval is ('+fx(L,2)+', '+fx(U,2)+'), and α = '+al+'.'),
         S('Check '+nz(a),nz(a)+(inA?' lies inside':' lies outside')+' ('+fx(L,2)+', '+fx(U,2)+').','',inA?'Fail to reject H₀: μ = '+nz(a):'Reject H₀: μ = '+nz(a),inA?'warn':'bad'),
         S('Check '+nz(b),nz(b)+(inB?' lies inside':' lies outside')+' ('+fx(L,2)+', '+fx(U,2)+').','',inB?'Fail to reject H₀: μ = '+nz(b):'Reject H₀: μ = '+nz(b),inB?'warn':'bad')
       ],
@@ -1761,7 +1774,7 @@ function genDuality(){
     text:'A two-sided test of H₀: μ = '+mu0+' gives a p-value of '+p+'. Is '+mu0+' inside the 95% confidence interval for μ? Is it inside the 90% interval?',
     pills:['p = '+p,'μ₀ = '+mu0],
     steps:[
-      S('Link p-values to levels','The test rejects at level α when p ≤ α, which happens exactly when μ₀ is outside the (1 − α) interval.','95% interval ↔ α = 0.05\n90% interval ↔ α = 0.10'),
+      S('Link p-values to levels','The test rejects at level α when p ≤ α, which happens exactly when μ₀ is outside the (1 − α) interval.','95% interval ↔ α = 0.05\n90% interval ↔ α = 0.10','','good','What H₀ and H₁ mean\nH₀ (null) = the claim: μ = '+mu0+'.\nH₁ (alternative) = μ is different from '+mu0+' (two-sided).\np = '+p+' is how surprising the data would be if H₀ were true.'),
       S('95% interval','Compare p with 0.05.','p = '+p+(rej95?' ≤ ':' > ')+'0.05',rej95?mu0+' is OUTSIDE the 95% interval (rejected)':mu0+' is INSIDE the 95% interval (not rejected)',rej95?'bad':'warn'),
       S('90% interval','Compare p with 0.10.','p = '+p+(rej90?' ≤ ':' > ')+'0.10',rej90?mu0+' is OUTSIDE the 90% interval (rejected)':mu0+' is INSIDE the 90% interval (not rejected)',rej90?'bad':'warn')
     ],
@@ -1793,9 +1806,9 @@ function genSetup(){
     text:sc.claim+' A sample of n = '+n+' is taken and the population standard deviation is '+(known?'known':'unknown')+'. Set up the test at α = 0.05: hypotheses, statistic and where the rejection region sits.',
     pills:['n = '+n,'σ '+(known?'known':'unknown'),'α = 0.05'],
     steps:[
-      S('Translate the claim into hypotheses','H₀ is the "nothing special" statement with an equals sign. H₁ is what the evidence would have to support.','H₀: '+sc.H0+'\nH₁: '+sc.Ha),
-      S('Choose the statistic',known?'σ is known, so the standardized mean is exactly standard normal.':'σ is unknown and estimated by s, so the statistic follows t with n − 1 = '+df+' df.',known?'Z = (X̄ − μ₀)/(σ/√n)':'T = (X̄ − μ₀)/(S/√n)'),
-      S('Pick the tail','Because '+sc.why+'.',sc.tail==='two'?'two-sided: reject if |'+piv.toUpperCase()+'| > '+fx(cr,3):sc.tail==='upper'?'upper-tail: reject if '+piv.toUpperCase()+' > '+fx(cr,3):'lower-tail: reject if '+piv.toUpperCase()+' < −'+fx(cr,3)),
+      S('Translate the claim into hypotheses','H₀ is the "nothing special" statement with an equals sign. H₁ is what the evidence would have to support.','H₀: '+sc.H0+'\nH₁: '+sc.Ha,'','good','What H₀ and H₁ mean\nH₀ (null) = the “nothing special” claim, always with an equals sign: '+sc.H0+'.\nH₁ (alternative) = what you suspect, and what the data would have to support: '+sc.Ha+'.'),
+      S('Choose the statistic',known?'σ is known, so the standardized mean is exactly standard normal.':'σ is unknown and estimated by s, so the statistic follows t with n − 1 = '+df+' df.',known?'Z = (X̄ − μ₀)/(σ/√n)':'T = (X̄ − μ₀)/(S/√n)','','good','Formula used: '+(known?'z':'t')+' statistic\nX̄ = sample average\nμ₀ = value in H₀\n'+(known?'σ = known SD of one item':'S = SD estimated from the sample')+'\nn = '+n+' (items tested)'+(known?'':'\ndf = n − 1 = '+df)),
+      S('Pick the tail','Because '+sc.why+'.',sc.tail==='two'?'two-sided: reject if |'+piv.toUpperCase()+'| > '+fx(cr,3):sc.tail==='upper'?'upper-tail: reject if '+piv.toUpperCase()+' > '+fx(cr,3):'lower-tail: reject if '+piv.toUpperCase()+' < −'+fx(cr,3),'','good','Where the cutoff comes from\nα = 0.05'+(sc.tail==='two'?' is split over two tails, 0.025 each':' goes all in one tail')+'\n'+(known?'z':'t')+'* = '+fx(cr,3)+' ('+(known?'z':'t')+'-table value for that tail area'+(known?'':' and '+df+' df')+')\nH₁ is '+sc.Ha+', so '+(sc.tail==='two'?'both tails count':sc.tail==='upper'?'the right tail counts':'the left tail counts')),
       S('Remember what the decision means','Rejecting H₀ says the data are unlikely if H₀ were true. Failing to reject does not prove H₀, it only means the evidence was not strong enough.','',sc.tail==='two'?'Both tails, α/2 = 0.025 each':'One tail, α = 0.05 all on the '+(sc.tail==='upper'?'right':'left'),'warn')
     ],
     draw:function(ctx,W,H,s,C){drawDensity(ctx,W,H,s,C,{x0:-lim,x1:lim,ymax:f(0),ticks:niceTicks(-lim,lim,8),curves:[{f:f,color:'accent',lw:2.6,from:0}],shades:sh,vlines:[{x:0,label:'H₀',color:'ink3',from:0,dash:[2,3]}],label:{text:'rejection region',color:'bad',from:3},title:(known?'standard normal':'t with '+df+' df')+' under H₀'});}
@@ -2015,15 +2028,118 @@ function fvLegend(q){
   var parts=Object.keys(g).map(function(w){return w+' = '+g[w].join(' or ');});
   return parts.length?'Words stand in for letters: '+parts.join(', ')+'. Formulas below still use the letters.':'';
 }
+var TIPS={
+  transform:["write y = a + b·x and note what a and b are","apply it to the average and to every number in the five-number summary, but scale the SD and the IQR by |b| only","adding a shifts the middle but not the spread. If b is negative the order flips (min and max swap, Q1 and Q3 swap)."],
+  bayes2:["name the two events (has it, tests positive) and write down the three chances you are given","get P(positive) by adding the two ways to test positive: P(has)·P(pos | has) + P(no)·P(pos | no). Then divide: P(has | pos) = P(has and pos) / P(pos)","the test accuracy is P(pos | has), not P(has | pos). When the condition is rare the two are very different."],
+  bayes3:["write each source’s share and its defect rate","multiply share × defect rate for each source and add them up to get P(defective). Then divide the source you want by that total","the shares must add to 1, and the answers for all sources must add to 1 too. Use that as a check."],
+  normd:["add up all the pmf values and set the sum equal to 1","solve for c. Then add the pmf values you need for P(...) and compute E(X) = Σ x·p(x)","every chance must stay between 0 and 1, so c has to be positive."],
+  normc:["set the integral of f over its whole range equal to 1","solve for c. Then integrate f between the two limits for the probability, and integrate x·f(x) over the whole range for E(X)","integrate only where f is not 0, and keep c as a letter until the very end."],
+  cdfd:["remember F(x) = P(X ≤ x) and read the jumps in the table","P(X = k) = F(k) − F(k − 1), P(a < X ≤ b) = F(b) − F(a), P(X ≥ c) = 1 − F(c − 1)","for a discrete variable < and ≤ are different, so check which end is included."],
+  pdfcdf:["check that F climbs from 0 to 1 over its range","differentiate F to get f. Use P(s < X < t) = F(t) − F(s), and solve F(m) = 0.5 for the median","for a continuous variable < and ≤ give the same answer, so don’t worry about which one is used."],
+  ev:["write what you are given: a table of values and chances (discrete) or the curve f(x) (continuous)","E(X) = Σ x·p(x) (or ∫ x·f(x)dx), then Var(X) = E(X²) − E(X)². For a + bX use E = a + b·E(X) and Var = b²·Var(X)","adding a changes the average but not the variance, and the variance gets b², not b."],
+  joint:["add all the table entries, set the total to 1, and solve for the hidden c","row and column totals give the marginals. Then get E(X), E(Y), E(XY) and Cov = E(XY) − E(X)E(Y). Compare each p(x, y) with p(x)·p(y) for independence","independence must hold for EVERY cell, so one mismatch means not independent. A conditional chance uses only the cells that match the condition."],
+  jpdf:["sketch the region (a rectangle or a triangle) and write its limits","integrate f over the region and set it equal to 1 to find c. Then integrate out one variable at a time for each marginal, and use those for the probabilities and E(X) = E[E(X | Y)]","in a triangle the inner limits depend on the other variable. Draw it so you get them right."],
+  iter:["write what you are given: the distribution of the first variable, and of the second given the first","use E(Y) = E[E(Y | X)] and Var(Y) = E[Var(Y | X)] + Var[E(Y | X)]","both parts of the variance formula count. Forgetting one is the usual slip."],
+  varsum:["write Var(aX + bY) = a²Var(X) + b²Var(Y) + 2ab·Cov(X, Y)","if you were given the correlation ρ, first turn it into Cov = ρ·√(Var(X)·Var(Y)), then plug everything in","a and b get squared in the first two terms, but the Cov term keeps the sign of a·b."],
+  cheb:["see what you know (average, SD or variance, or only a nonnegative average) and remember the shape is unknown","pick the matching bound: Chebyshev P(|X − μ| ≥ d) ≤ σ²/d², its lower-bound form 1 − σ²/d², or Markov P(X ≥ t) ≤ E(X)/t. For a sample-size question, use Var(X̄) = σ²/n","these are bounds, not exact answers, and Markov only works when X is never negative."],
+  split:["find the rate of the stream you care about: new rate = r × p","multiply by the number of hours to get λ. Then use Poisson: P(X = k) = e^(−λ)·λ^k/k!, adding terms for “at most” or using 1 − … for “at least”","the rate is per hour, so multiply by the hours before using the formula."],
+  indep:["note how many have already arrived and how many more you still need","the past doesn’t matter, so use Poisson on the remaining time only, with need = n − j more arrivals","use the time that is LEFT (T₂ minus the time already passed), in the same units as the rate."],
+  nth:["make the units match (minutes to hours, or the rate to per minute)","the wait for the n-th arrival averages n/rate, and P(wait ≤ t) = P(at least n arrivals by t) = 1 − P(Poisson(rate·t) ≤ n − 1)","the n-th arrival is a gamma wait, so its mean is n/rate, not 1/rate."],
+  memoryless:["spot the “random time with no memory” and write its rate λ (the mean is 1/λ)","drop the time already survived: P(lasts s + t | lasted s) = P(lasts t) = e^(−λt), and the expected remaining time is just 1/λ","don’t subtract the time already run. It is forgotten. Also check whether you were given the rate or the mean."],
+  min:["turn each mean into a rate: λᵢ = 1/meanᵢ","add the rates. The first failure is exponential with rate Σλᵢ, so the expected life is 1/Σλᵢ and P(lasts > t) = e^(−Σλᵢ·t)","add the RATES, never the means."],
+  z:["say which side the probability sits on: above, below, or between","standardize with z = (x − μ)/σ, look it up in the table, and use 1 − table value for “above”","divide by σ, not σ². For “between”, subtract the two table values."],
+  xbar:["notice it is about an average of n values, not a single value","the average’s spread is σ/√n. Standardize with z = (x̄ − μ)/(σ/√n) and look it up in the table","dividing by σ/√n instead of σ is the whole trick: averages are much tighter than single values."],
+  sum:["write the total’s average n·μ and its spread σ·√n","standardize with z = (S − nμ)/(σ·√n) and use the table, since the CLT says the total is roughly bell-shaped","the spread grows like √n, not n."],
+  disc:["find the average and spread of the count: Binomial np and √(np(1 − p)), Poisson λ and √λ","move the edge by 0.5 (continuity correction): ≤ a becomes below a + 0.5, ≥ a becomes above a − 0.5. after that standardize and use the table","the 0.5 always moves outward so the whole count is included. Also check np and n(1 − p) are big enough first."],
+  chisq:["count the degrees of freedom: how many squares were added","look the cutoff up in the χ² table, or if two independent χ² are added, add their df first (df = a + b)","the table often gives the area to the RIGHT of the cutoff."],
+  dist:["write D² = X² + Y² (+ Z²), a sum of squared bell-curve values","divide by σ² so D²/σ² follows χ² with 2 or 3 df. Then P(D > d) = P(χ² > d²/σ²)","divide d by σ and then SQUARE it before using the table."],
+  s2:["write (n − 1)S²/σ² ~ χ² with n − 1 df","turn the event about S² into an event about that χ² quantity: multiply the cutoff by (n − 1)/σ², then use the χ² table","use n − 1 degrees of freedom, not n."],
+  t:["find the standard error s/√n","compute t = (x̄ − μ₀)/(s/√n), then use the t table with n − 1 df","use t instead of z because σ is estimated. Which tail you need depends on H₁."],
+  mom:["write the population mean (and the second moment if there are 2 settings) in terms of the settings","set them equal to the sample mean (and sample second moment), then solve for the settings","you need as many equations as unknown settings."],
+  mle:["write the likelihood: multiply the pdf or pmf over all the data points","take the log, differentiate, set it to 0 and solve","for a uniform or a shifted exponential, the answer comes from the biggest or smallest data point, not from setting a derivative to 0."],
+  ciz:["notice σ is known, so use z","compute x̄ ± z*·σ/√n, with z* from the confidence level (1.645 for 90%, 1.96 for 95%, 2.576 for 99%)","the margin is z*·σ/√n, not z*·σ."],
+  cit:["notice σ is unknown, so use t with n − 1 df","compute x̄ ± t*·s/√n. For a floor or a ceiling use just one tail","a one-sided bound uses α in one tail, not α/2."],
+  civ:["notice it is about a variance, so use χ²","divide (n − 1)s² by the larger χ² value for the lower end and by the smaller χ² value for the upper end","the interval is not symmetric around s². For a standard deviation, take square roots at the end."],
+  cin:["check which case: known σ (for a mean) or a proportion with no guess","solve the margin for n: n ≥ (z*·σ/E)², or for a proportion use p = 0.5, so n ≥ (z*/(2E))²","always round UP."],
+  setup:["turn the claim into H₀ (an equals sign) and H₁ (the direction you suspect)","choose z (σ known) or t (σ unknown, n − 1 df), then put the rejection region in the tail H₁ points to","“longer than” or “less than” gives a one-sided test, while “drifted either way” is two-sided, so split α in half."],
+  tz:["write H₀, H₁ and α","compute z = (x̄ − μ₀)/(σ/√n), find the p-value for the tail H₁ points to, and compare it with α","reject when the p-value is below α. For a two-sided test, double the one-tail p-value."],
+  tt:["write H₀, H₁ and α","compute t = (x̄ − μ₀)/(s/√n), use the t table with n − 1 df, and compare the p-value (or the critical value) with α","a t table often only gives a range for the p-value, so comparing the critical value is easier."],
+  power:["find the cutoff for rejecting H₀, written in terms of x̄","then find the chance x̄ lands on the “do not reject” side when the true mean is μ₁. That is β, and power = 1 − β","use the TRUE mean μ₁ for β, and the same standard error σ/√n."],
+  dual:["check whether the claimed value is inside the confidence interval","inside means the test does not reject, outside means it rejects (for a two-sided test with the matching level)","a 95% interval matches α = 0.05 and a 90% interval matches α = 0.10. With a p-value, reject when p < α."]
+};
+
+/* ================= Pull out the numbers ================= */
+var GLOSS={'n':'sample size','x̄':'sample average','s':'sample SD (typical spread)','σ':'known SD (typical spread)','σ²':'variance','α':'false-alarm chance','μ':'average','μ₀':'claimed average','true μ':'true average (suppose)','λ':'rate','p':'chance','E':'allowed margin','mean':'average','P(D)':'chance of having it','P(+|D)':'positive if you have it','P(+|Dc)':'positive if you don’t','shares':'share of each source','defects':'defect rate of each','confidence':'how sure','conf':'how sure'};
+var NUM_SKIP=/^(IQR|df|a|b|c|k|d|h)\b|∈|sided|CI\b/;
+var GLOSS_TID={memoryless:{s:'time already survived',t:'extra time asked about'},nth:{n:'which ball (arrival)',t:'time window'},dual:{p:'p-value'},split:{p:'chance a ball is red',t:'time window'},indep:{t:'time'}};
+function symOf(p){return String(p).split(/\s*=\s*|\s+(?=[\d.−-])/)[0].trim();}
+function glossFor(p,tid){var sym=symOf(p),ov=GLOSS_TID[tid]||{};
+  if(ov[sym])return ov[sym];
+  if(/^P\(\+\|D[^)]/.test(sym))return 'positive if you don’t have it';
+  if(/^Var\(/.test(sym))return 'how much it varies';
+  if(sym==='ρ')return 'how tightly they move together';
+  if(sym==='t')return 'time';
+  return GLOSS[sym]||'';}
+var NUM_OK=/^([A-Za-zμσαλρ₀-₉²̄ ]{1,12}(\([^)]*\))?\s*=\s*[−-]?\d[\d.]*%?(\s*\S{1,4})?|(shares|defects|rate|means?|confidence)\s.*\d)$/;
+function numVal(t){var pct=/%$/.test(t),v=parseFloat(t.replace('−','-').replace('%',''));return pct?v/100:v;}
+function annotateGivens(root,pills){
+  var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var e=n.parentNode;return (e&&e.closest&&e.closest('sup,sub'))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});
+  var items=[],node,m;
+  while((node=walker.nextNode())){
+    var re=/[−-]?\d+(?:\.\d+)?%?/g,str=node.nodeValue;
+    while((m=re.exec(str))){
+      var tok=m[0],st=m.index;
+      if(/^[−-]/.test(tok)&&st>0&&/[\w)\]]/.test(str.charAt(st-1))){tok=tok.slice(1);st+=1;}
+      items.push({node:node,start:st,end:st+tok.length,v:numVal(tok),used:false,tag:null,pre:str.slice(0,st)});
+    }
+  }
+  var leftover=[];
+  (pills||[]).forEach(function(pl){
+    var nums=(String(pl).match(/[−-]?\d+(?:\.\d+)?/g)||[]).map(numVal);
+    if(!nums.length||NUM_SKIP.test(pl)||!NUM_OK.test(pl)){leftover.push(pl);return;}
+    var hi=-1;
+    for(var i=0;i<items.length;i++)if(!items[i].used&&Math.abs(items[i].v-nums[0])<1e-9){hi=i;break;}
+    if(hi<0){leftover.push(pl);return;}
+    items[hi].used=true;items[hi].tag=pl;
+    var from=hi+1;
+    for(var k=1;k<nums.length;k++){for(var j=from;j<items.length;j++)if(!items[j].used&&Math.abs(items[j].v-nums[k])<1e-9){items[j].used=true;from=j+1;break;}}
+  });
+  items.filter(function(it){return it.used;}).sort(function(a,b){return a.node===b.node?b.start-a.start:0;}).forEach(function(it){
+    var mid=it.node.splitText(it.start),after=mid.splitText(it.end-it.start),mk=document.createElement('mark');
+    mk.className='given';it.node.parentNode.insertBefore(mk,after);mk.appendChild(mid);
+    if(it.tag){var tid=state.q&&state.q.tid,g=glossFor(it.tag,tid),sym=symOf(it.tag),said=/=\s*$/.test(it.pre);
+      if(!said||g){var tg=document.createElement('span');tg.className='gtag'+(said?' gonly':'');
+        tg.innerHTML=(said?'':'<b>'+H(friendlyVars(it.tag,tid))+'</b>')+(g?'<i>'+H(g)+'</i>':'');
+        it.node.parentNode.insertBefore(tg,after);}}
+  });
+  return leftover;
+}
+function renderNums(){
+  var q=state.q,b=document.getElementById('bNums');if(!q||!el.text)return;
+  var E=function(x){return easyText(x,q.mid,q.tid);};
+  el.text.innerHTML=H(E(q.text));
+  if(b){b.setAttribute('aria-pressed',state.nums?'true':'false');b.textContent=state.nums?'Hide the numbers':'Pull out the numbers';}
+  if(!state.nums){el.pills.innerHTML='';return;}
+  var left=annotateGivens(el.text,q.pills);
+  el.pills.innerHTML=left.length?'<span class="also">Also given:</span>'+left.map(function(p){return '<span class="pill">'+H(friendlyVars(p,q.tid))+'</span>';}).join(''):'';
+}
+function renderTip(){
+  var b=document.getElementById('bTip'),box=document.getElementById('tipBox');if(!b||!box)return;
+  var q=state.q,tp=q&&TIPS[q.tid];
+  b.setAttribute('aria-expanded',state.tip?'true':'false');b.textContent=state.tip?'Hide tips':'Tips';
+  box.hidden=!state.tip||!tp;
+  if(tp&&state.tip){var E=function(x){return easyText(x,q.mid,q.tid);};
+    box.innerHTML='<b>For this type of problem, first</b> '+H(E(tp[0]))+'. <b>Then</b> '+H(E(tp[1]))+'. <b>Watch out:</b> '+H(E(tp[2]));}
+}
 function renderEasyNote(){
   var n=document.getElementById('easyNote'),b=document.getElementById('easyBtn');
   if(b){b.textContent='Simpler words: '+(state.easy?'on':'off');b.setAttribute('aria-pressed',state.easy?'true':'false');}
   if(n){n.hidden=!state.easy;n.innerHTML=state.easy?'<b>Simpler words.</b> '+H((function(t){return t.charAt(0).toUpperCase()+t.slice(1);})(friendlyVars((state.q&&state.q.story)||EASY_NOTE[state.id]||'',state.q&&state.q.tid)))+(state.q&&fvLegend(state.q)?'<div class="easy-leg">'+H(fvLegend(state.q))+'</div>':''):'';}
 }
+function easyToggle(){state.easy=!state.easy;try{localStorage.setItem('stat271-easy',state.easy?'1':'0');}catch(e){}renderEasyNote();if(state.q){showQ();applyStep(false);}}
 function initEasy(){
+  try{state.nums=localStorage.getItem('stat271-nums')==='1';}catch(e){state.nums=false;}
   try{state.easy=localStorage.getItem('stat271-easy')==='1';}catch(e){state.easy=false;}
-  var b=document.getElementById('easyBtn');
-  if(b)b.onclick=function(){state.easy=!state.easy;try{localStorage.setItem('stat271-easy',state.easy?'1':'0');}catch(e){}renderEasyNote();if(state.q){showQ();applyStep(false);}};
   renderEasyNote();if(state.q){showQ();applyStep(false);}
 }
 
@@ -2041,7 +2157,7 @@ function renderStage(){
   stage.innerHTML='<div class="mod-head"><h2>'+H(m.label)+'</h2><p>'+H(m.blurb)+'</p></div>'+
     '<div class="chips" id="chips"></div><div class="chips vchips" id="vchips" hidden></div>'+
     '<div class="workspace"><div class="left">'+
-      '<section class="card q-card"><div class="q-meta" id="qMeta"></div><p class="q-text" id="qText"></p><div class="pills" id="qPills"></div></section><div class="easy-note" id="easyNote" hidden></div>'+
+      '<section class="card q-card"><div class="q-meta" id="qMeta"></div><p class="q-text" id="qText"></p><div class="pills" id="qPills"></div><div class="tip-row"><button type="button" class="btn ghost tipbtn" id="bNums" aria-pressed="false">Pull out the numbers</button><button type="button" class="btn ghost tipbtn" id="bTip" aria-expanded="false">Tips</button><button type="button" class="btn ghost tipbtn" id="easyBtn" aria-pressed="false">Simpler words: off</button></div><div class="tip-box" id="tipBox" hidden></div></section><div class="easy-note" id="easyNote" hidden></div>'+
       '<section class="card viz"><canvas id="cv" role="img" aria-label="Diagram for the current question"></canvas></section>'+
       '<div class="actions"><button class="btn ghost" id="bBack">Back</button><button class="btn" id="bNext">Next step</button><button class="btn ghost" id="bAll">Show all</button><button class="btn ghost" id="bNew">New question</button></div>'+
     '</div>'+
@@ -2068,7 +2184,7 @@ function newQuestion(){
   var vr=(state.type!=='mixed'&&t.variants&&state.variant!=='any')?t.variants.filter(function(x){return x.id===state.variant;})[0]:null,ok=!vr,cap=vr?500:6;
   while(tries<cap&&!(q&&ok)){try{q=t.gen();ok=!vr||vr.re.test(q.text);}catch(e){console.error(e);q=null;}tries++;}
   if(!q){el.text.textContent='Could not build this question. Try New question.';el.steps.innerHTML='';return;}
-  q.typeLabel=t.label;state.q=q;state.s=0;el.text.setAttribute('data-vm',ok?'1':'0');
+  q.typeLabel=t.label;state.q=q;state.s=0;state.tip=false;el.text.setAttribute('data-vm',ok?'1':'0');
   state.metaLabel=m.label+' · '+t.label;q.mid=m.id;q.tid=t.id;
   showQ();
   applyStep(false);
@@ -2078,11 +2194,13 @@ function showQ(){
   var E=function(s){return easyText(s,q.mid,q.tid);};
   el.meta.innerHTML=H(state.metaLabel);
   el.text.innerHTML=H(E(q.text));
-  el.pills.innerHTML=q.pills.map(function(p){return '<span class="pill">'+H(friendlyVars(p,q.tid))+'</span>';}).join('');
   el.cv.setAttribute('aria-label','Diagram for: '+q.text);
-  renderEasyNote();
+  renderEasyNote();renderTip();renderNums();
+  var tb=document.getElementById('bTip');if(tb)tb.onclick=function(){state.tip=!state.tip;renderTip();};
+  var eb=document.getElementById('easyBtn');if(eb)eb.onclick=easyToggle;
+  var nb=document.getElementById('bNums');if(nb)nb.onclick=function(){state.nums=!state.nums;try{localStorage.setItem('stat271-nums',state.nums?'1':'0');}catch(e){}renderNums();};
   el.steps.innerHTML=q.steps.map(function(st,i){
-    return '<div class="step" data-i="'+i+'"><div class="step-n">'+(i+1)+'</div><div class="step-b"><h4>'+H(E(st.t))+'</h4><div class="step-x">'+(st.b?'<p>'+H(E(st.b))+'</p>':'')+(st.f?'<div class="formula">'+H(st.f)+'</div>':'')+(st.a?'<div class="ans '+st.k+'">'+H(st.a)+'</div>':'')+'</div></div></div>';
+    return '<div class="step" data-i="'+i+'"><div class="step-n">'+(i+1)+'</div><div class="step-b"><h4>'+H(E(st.t))+'</h4><div class="step-x">'+(st.b?'<p>'+H(E(st.b))+'</p>':'')+(st.f?(st.n?'<div class="fwrap"><div class="formula">'+H(st.f)+'</div><div class="fnote">'+E(st.n).split('\n').map(function(l,i){return '<div'+(i?'':' class="fn-t"')+'>'+H(l)+'</div>';}).join('')+'</div></div>':'<div class="formula">'+H(st.f)+'</div>'):'')+(st.a?'<div class="ans '+st.k+'">'+H(st.a)+'</div>':'')+'</div></div></div>';
   }).join('');
 }
 function prevStep(){if(!state.q||state.s<=0)return;state.s--;applyStep(false);}
