@@ -1824,28 +1824,28 @@ var VARIANTS={
 MODULES.forEach(function(m){m.types.forEach(function(t){var v=VARIANTS[m.id+'/'+t.id];if(v)t.variants=v.map(function(x,i){return {id:'v'+i,label:x[0],re:x[1]};});});});
 
 /* ================= the professor ================= */
-var PROF_MOODS=['Skeptical','Curious','Pleased','Proud','Overjoyed'],PROF_AT=[0,1,3,6,12],PROF_LOSS=3;
+var PROF_MOODS=['Skeptical','Curious','Pleased','Proud','Overjoyed'],PROF_AT=[0,5,25,50,80],PROF_LOSS=15;
 var PROF_GREET=[
-  ['Ah, one of my students. Finish a question and I’ll start smiling.','Welcome. Let’s see what you can do.'],
+  ['Ah, one of my students. Finish a question and I’ll start smiling.','Your current final strategy is hope. Hope is not on the syllabus.'],
   ['Good to see you again. That was a solid start.','Keep going. You’re making progress.'],
   ['Good to see you. You’re doing well.','Nice work so far. Keep it up.'],
   ['You’re doing great. Keep this up.','I’m really happy with your progress.'],
-  ['You’ve done so much. I’m really proud of you.','Look how far you’ve come. Exam day is going to go well.']
+  ['You’ve done so much. I’m really proud of you.','You are carrying the class average.']
 ];
 var PROF_DONE=[
   ['One down. Not bad at all.','You read the steps. Good start.','A finished question. Keep going.'],
   ['Another one! You’re getting the hang of this.','Nice. That’s real progress.','Good. I like where this is going.'],
   ['Great work. I’d give you a gold star, but budget cuts.','You’re on a roll. A statistically significant one.','That was clean. Do another.'],
-  ['Excellent. That was well done.','You’re making me very happy.','Well done. You really understand this now.'],
-  ['I can’t stop smiling.','Fantastic work. The exam won’t know what hit it.','You should be proud of yourself. I am.']
+  ['Excellent. That was well done.','You’re making me very happy.','You are moving into the right tail of this class’s grade distribution.'],
+  ['I can’t stop smiling.','Fantastic work. The exam won’t know what hit it.','You are carrying the class average.','You should be proud of yourself. I am.']
 ];
 var PROF_LEVELUP=['','Level up! Nice start. Keep going.','Level up! Good work. Don’t tell the other students I said so.','Level up! Excellent work. I’m proud of you.','Level up! Top marks. You’ve really earned this.'];
 var PROF_FORGIVE=['You’re back. I forgive you. Mostly.','Welcome back. I missed you. Let’s get going.','Okay, that’s one. No more skipping days.'];
 function profLevel(c){var l=0;for(var i=0;i<PROF_AT.length;i++)if(c>=PROF_AT[i])l=i;return l;}
 function profToday(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
 function profDays(a,b){var pa=a.split('-'),pb=b.split('-');return Math.round((Date.UTC(+pb[0],+pb[1]-1,+pb[2])-Date.UTC(+pa[0],+pa[1]-1,+pa[2]))/864e5);}
-function profLoad(){try{var o=JSON.parse(localStorage.getItem('stat271-prof2')||'null');if(o&&typeof o.pts==='number')return o;}catch(e){}return null;}
-function profSave(){try{localStorage.setItem('stat271-prof2',JSON.stringify(PROF));}catch(e){}}
+function profLoad(){try{var o=JSON.parse(localStorage.getItem('stat271-prof3')||'null');if(o&&typeof o.pts==='number')return o;}catch(e){}return null;}
+function profSave(){try{localStorage.setItem('stat271-prof3',JSON.stringify(PROF));}catch(e){}}
 var PROF=profLoad(),profSad=false,profArm=0,profGreeting='';
 (function(){
   var today=profToday();
@@ -1855,9 +1855,9 @@ var PROF=profLoad(),profSad=false,profArm=0,profGreeting='';
     if(missed>0){
       PROF.pts-=loss;profSad=true;
       profGreeting=pick([
-        'You were gone '+away+' days. I got sad.'+(loss?' Pride dropped by '+loss+'.':''),
-        'It’s been '+away+' days. I missed you.'+(loss?' (Pride −'+loss+'.)':''),
-        'Oh, you’re back.'+(loss?' I lost '+loss+' pride points, but I’m glad to see you.':' Let’s get back to it.')
+        'You were gone '+away+' days. I got sad.'+(loss?' Mood dropped by '+loss+'.':''),
+        'Your current final strategy is hope. Hope is not on the syllabus.'+(loss?' (Mood −'+loss+'.)':''),
+        'Oh, you’re back.'+(loss?' I lost '+loss+' mood points, but I’m glad to see you.':' Let’s get back to it.')
       ]);
     } else profGreeting=pick(PROF_GREET[profLevel(PROF.pts)]);
     PROF.last=today;
@@ -1900,13 +1900,13 @@ function renderProf(line,pop){
   var l=profLevel(PROF.pts),face=document.getElementById('profFace'),next=PROF_AT[l+1],name=profSad?'Disappointed':PROF_MOODS[l];
   face.innerHTML=profSVG(profSad?-1:l);face.setAttribute('aria-label','Professor Wei, mood: '+name);
   document.getElementById('profSay').textContent=line;
-  document.getElementById('profMood').textContent=name+' · pride '+PROF.pts+(next?' · '+(next-PROF.pts)+' to '+PROF_MOODS[l+1].toLowerCase():'')+' · '+PROF.total+' solved';
-  document.getElementById('profBar').style.width=(next?Math.round((PROF.pts-PROF_AT[l])/(next-PROF_AT[l])*100):100)+'%';
+  document.getElementById('profMood').textContent=name+' · mood '+PROF.pts+'/100 · '+PROF.total+' solved';
+  document.getElementById('profBar').style.width=PROF.pts+'%';
   if(pop){face.classList.remove('pop');void face.offsetWidth;face.classList.add('pop');}
 }
 function profDone(){
   var before=profLevel(PROF.pts),wasSad=profSad;
-  PROF.pts++;PROF.total++;PROF.last=profToday();profSad=false;profSave();
+  PROF.pts=Math.min(100,PROF.pts+5);PROF.total++;PROF.last=profToday();profSad=false;profSave();
   var after=profLevel(PROF.pts);
   renderProf(wasSad?pick(PROF_FORGIVE):after>before?PROF_LEVELUP[after]:pick(PROF_DONE[after]),true);
 }
