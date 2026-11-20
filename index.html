@@ -1395,19 +1395,19 @@ function genSetup(){
 
 /* ================= module registry ================= */
 var MODULES=[
-  {id:'data',label:'Data & Probability',week:'Wk 1 · 2',blurb:'Linear transformations of data, total probability and Bayes’ rule.',types:[
+  {id:'data',label:'Data & Probability',week:'Wk 1\u20132',blurb:'Linear transformations of data, total probability and Bayes’ rule.',types:[
     {id:'transform',label:'Linear transforms',gen:genTransform},{id:'bayes2',label:'Bayes: test result',gen:genBayes2},{id:'bayes3',label:'Bayes: three sources',gen:genBayes3}]},
-  {id:'normal',label:'Normal & CLT',week:'Wk 6 · 8',blurb:'Normal probabilities, sample means, sums, and the normal approximation to discrete counts.',types:[
-    {id:'z',label:'Normal probabilities',gen:genZ},{id:'xbar',label:'Sample mean',gen:genXbar},{id:'sum',label:'Sums (CLT)',gen:genSum},{id:'disc',label:'Normal approximation',gen:genDisc}]},
-  {id:'poisson',label:'Poisson & Exponential',week:'Wk 6 · 7',blurb:'Splitting and independence in Poisson processes, waiting times, memorylessness and minimum lifetimes.',types:[
-    {id:'split',label:'Poisson splitting',gen:genSplit},{id:'indep',label:'Independent increments',gen:genIndep},{id:'nth',label:'n-th arrival (gamma)',gen:genNth},{id:'memoryless',label:'Memoryless',gen:genMemoryless},{id:'min',label:'Minimum of exponentials',gen:genMin}]},
-  {id:'joint',label:'Joint & Moments',week:'Wk 4 · 5',blurb:'Joint pmf tables, covariance, conditional expectation and variance, variance of sums, Markov and Chebyshev.',types:[
+  {id:'joint',label:'Joint & Moments',week:'Wk 4\u20135',blurb:'Joint pmf tables, covariance, conditional expectation and variance, variance of sums, Markov and Chebyshev.',types:[
     {id:'joint',label:'Joint pmf table',gen:genJoint},{id:'iter',label:'Iterated E and Var',gen:genIter},{id:'varsum',label:'Variance of a sum',gen:genVarSum},{id:'cheb',label:'Markov & Chebyshev',gen:genCheb}]},
-  {id:'sampling',label:'χ², t & S²',week:'Wk 7 · 8',blurb:'Sampling distributions of S² and of the standardized mean, with table-style bracketing.',types:[
-    {id:'s2',label:'Sample variance',gen:genS2},{id:'chisq',label:'Chi-square',gen:genChisq},{id:'dist',label:'Distance (sum of squares)',gen:genDist},{id:'t',label:'t statistic',gen:genT}]},
-  {id:'est',label:'Estimation',week:'Ch 7',blurb:'Method of moments and maximum likelihood, worked step by step.',types:[
+  {id:'poisson',label:'Poisson & Exponential',week:'Wk 6\u20137',blurb:'Splitting and independence in Poisson processes, waiting times, memorylessness and minimum lifetimes.',types:[
+    {id:'split',label:'Poisson splitting',gen:genSplit},{id:'indep',label:'Independent increments',gen:genIndep},{id:'nth',label:'n-th arrival (gamma)',gen:genNth},{id:'memoryless',label:'Memoryless',gen:genMemoryless},{id:'min',label:'Minimum of exponentials',gen:genMin}]},
+  {id:'normal',label:'Normal & CLT',week:'Wk 6, 8',blurb:'Normal probabilities, sample means, sums, and the normal approximation to discrete counts.',types:[
+    {id:'z',label:'Normal probabilities',gen:genZ},{id:'xbar',label:'Sample mean',gen:genXbar},{id:'sum',label:'Sums (CLT)',gen:genSum},{id:'disc',label:'Normal approximation',gen:genDisc}]},
+  {id:'sampling',label:'χ², t & S²',week:'Wk 7\u20138',blurb:'Sampling distributions of S² and of the standardized mean, with table-style bracketing.',types:[
+    {id:'chisq',label:'Chi-square',gen:genChisq},{id:'dist',label:'Distance (sum of squares)',gen:genDist},{id:'s2',label:'Sample variance',gen:genS2},{id:'t',label:'t statistic',gen:genT}]},
+  {id:'est',label:'Estimation',week:'Wk 9',blurb:'Method of moments and maximum likelihood, worked step by step.',types:[
     {id:'mom',label:'Method of moments',gen:genMom},{id:'mle',label:'Maximum likelihood',gen:genMle}]},
-  {id:'ci',label:'Confidence Intervals',week:'Ch 7',blurb:'z, t and chi-square intervals, one-sided bounds, and sample size.',types:[
+  {id:'ci',label:'Confidence Intervals',week:'Wk 9',blurb:'z, t and chi-square intervals, one-sided bounds, and sample size.',types:[
     {id:'ciz',label:'Mean, σ known',gen:genCIz},{id:'cit',label:'Mean, σ unknown',gen:genCIt},{id:'civ',label:'Variance',gen:genCIvar},{id:'cin',label:'Sample size',gen:genCIn}]},
   {id:'tests',label:'Hypothesis Testing',week:'Wk 10',blurb:'Setting up tests, z and t tests with p-values, Type I and II error and power, and the link to confidence intervals.',types:[
     {id:'setup',label:'Set up the test',gen:genSetup},{id:'tz',label:'z test',gen:genTestZ},{id:'tt',label:'t test',gen:genTestT},{id:'power',label:'Error and power',gen:genPower},{id:'dual',label:'Test and CI',gen:genDuality}]}
