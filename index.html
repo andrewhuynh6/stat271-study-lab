@@ -95,7 +95,7 @@ button{font-family:inherit}
 .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; min-width:0}
 .q-card{padding:16px 18px}
 .q-meta{font-family:var(--font-m); font-size:11px; letter-spacing:.7px; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
-.q-text{font-family:var(--font-d); font-size:16.5px; font-weight:500; line-height:1.45}
+.q-text{font-family:var(--font-d); font-size:16.5px; font-weight:500; line-height:1.45; white-space:pre-line}
 .pills{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px}
 .pill{font-family:var(--font-m); font-size:12px; color:var(--accent); background:rgba(var(--accent-rgb),.09); border:1px solid var(--line); border-radius:6px; padding:2px 9px}
 .viz{overflow:hidden}
@@ -1437,6 +1437,7 @@ function drawCdfSteps(ctx,W,H,s,C,q){
   axisX(ctx,P,C,xs);
   [0,0.5,1].forEach(function(v){T(ctx,fx(v,1),P.l-6,P.Y(v)+4,C.ink3,10.5,'right');ctx.save();ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(P.l,P.Y(v));ctx.lineTo(P.W-P.r,P.Y(v));ctx.stroke();ctx.restore();});
   T(ctx,'F(x) = P(X ≤ x)',P.l+2,16,C.ink3,11.5);
+  if(s<1){T(ctx,'Press Start to draw F(x) from the table',P.W/2+P.l/2,P.Y(0.5)-4,C.ink3,12,'center',500);return;}
   var prev=0;
   xs.forEach(function(x,i){
     var on=hl.indexOf(i)>=0,xl=i?xs[i-1]:P.x0;
@@ -1460,8 +1461,8 @@ function genCdfD(){
   var pk=rd(Fv(k)-Fv(k-1),2),pab=rd(Fv(b)-Fv(a),2),pc=rd(1-Fv(c-1),2);
   var hl3=[],hl4=[];for(var i=a+1;i<=b;i++)hl3.push(i);for(var j=c;j<=4;j++)hl4.push(j);
   return {
-    text:'A discrete random variable X takes the values 0, 1, 2, 3, 4. Its CDF F(x) = P(X ≤ x) has the values shown below. Find P(X = '+k+'), P('+a+' < X ≤ '+b+') and P(X ≥ '+c+').',
-    pills:F.map(function(v,i){return 'F('+i+') = '+fx(v,2);}),
+    text:'A discrete random variable X takes the values 0, 1, 2, 3, 4 and has CDF\nF(x) = 0 for x < 0\n'+[0,1,2,3].map(function(i){return '\u2003\u2003\u2003\u2003 '+fx(F[i],2)+' for '+i+' ≤ x < '+(i+1);}).join('\n')+'\n\u2003\u2003\u2003\u2003 1 for x ≥ 4\nFind P(X = '+k+'), P('+a+' < X ≤ '+b+') and P(X ≥ '+c+').',
+    pills:['x = 0, 1, 2, 3, 4'],
     steps:[
       S('A CDF jumps at each possible value','F stays flat between possible values and jumps by exactly p(x) at each one, so p(x) = F(x) − F(x−1).','p = ('+p.map(function(v){return fx(v,2);}).join(', ')+')'),
       S('A single value','The probability of one value is the size of its jump (green).','P(X = '+k+') = F('+k+') − F('+(k-1)+') = '+fx(Fv(k),2)+' − '+fx(Fv(k-1),2),'P(X = '+k+') = '+fx(pk,2)),
