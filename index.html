@@ -381,7 +381,7 @@ body.rail-off .shell{padding-top:52px}
   /* worked solution */
   .steps-head{padding:12px 16px; font-size:16px}
   .step{padding:14px 16px; gap:12px}
-  .step{scroll-margin-top:72px; scroll-margin-bottom:90px}
+  .step{scroll-margin-top:calc(var(--vizh,0px) + 14px); scroll-margin-bottom:90px}
   .step-n{width:28px; height:28px}
   .step h4{font-size:16.5px}
   .step-x p{font-size:17px; line-height:1.55}
@@ -430,7 +430,9 @@ body.sheet-open{overflow:hidden}
   .left > .actions #bAll,.left > .actions #bNew{display:none}
   .q-card{padding:18px 16px}
   .q-text{line-height:1.5}
-  .left{gap:14px}
+  .workspace{gap:14px}
+  .left{display:contents}
+  .viz{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; box-shadow:0 6px 0 var(--bg),2px 2px 0 var(--edge)}
   .step{padding:18px 16px}
   .step-x p{line-height:1.65}
   .formula{margin-top:10px}
@@ -441,6 +443,10 @@ body.sheet-open{overflow:hidden}
   .fnote{cursor:pointer}
 }
 @media (min-width:701px){.sheet{display:none}}
+.easy-note{cursor:pointer}
+.easy-note > b:first-child::after{content:' \25B4'; color:var(--ink-3); font-weight:400}
+.easy-note.min{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+.easy-note.min > b:first-child::after{content:' \25BE'}
 </style>
 
 <div class="shell">
@@ -3549,7 +3555,7 @@ function renderRail(){
   var act=rail.querySelector('.tab.active');
   if(act&&window.innerWidth<=980&&rail.scrollWidth>rail.clientWidth)rail.scrollLeft=act.offsetLeft-(rail.clientWidth-act.offsetWidth)/2;
 }
-stage.addEventListener('click',function(e){var p=e.target.closest('.mod-head p');if(p)p.classList.toggle('open');var n=e.target.closest('.fnote');if(n)n.classList.toggle('open');});
+stage.addEventListener('click',function(e){var p=e.target.closest('.mod-head p');if(p)p.classList.toggle('open');var n=e.target.closest('.fnote');if(n)n.classList.toggle('open');var en=e.target.closest('.easy-note');if(en)en.classList.toggle('min');});
 function renderStage(){
   var m=mod();
   if(m.quiz){renderQuiz();return;}
@@ -3625,8 +3631,9 @@ function draw(){
   if(!state.q||!el.cv)return;
   var cv=el.cv,cw=Math.max(280,cv.clientWidth||cv.parentNode.clientWidth||600),SC=cw>=700?1.3:1.12,w=cw/SC;
   var h=(state.q&&state.q.tall)?Math.max(330,Math.min(450,Math.round(w*0.9))):Math.max(230,Math.min(340,Math.round(w*0.56)));
+  if(window.innerWidth<=700){var cap=Math.max(200,(state.q&&state.q.tall?0.46:0.36)*window.innerHeight/SC);h=Math.min(h,cap);}
   var dpr=Math.min(window.devicePixelRatio||1,2);
-  cv.width=Math.round(cw*dpr);cv.height=Math.round(h*SC*dpr);cv.style.height=Math.round(h*SC)+'px';
+  cv.width=Math.round(cw*dpr);cv.height=Math.round(h*SC*dpr);cv.style.height=Math.round(h*SC)+'px';document.documentElement.style.setProperty('--vizh',(window.innerWidth<=700?Math.round(h*SC):0)+'px');
   var ctx=cv.getContext('2d');ctx.setTransform(dpr*SC,0,0,dpr*SC,0,0);ctx.clearRect(0,0,w,h);
   try{state.q.draw(ctx,w,h,state.s,colors());}catch(e){console.error(e);}
 }
