@@ -396,6 +396,51 @@ body.rail-off .shell{padding-top:52px}
   .quiz-card .actions .btn:only-child{grid-column:1/-1}
   .quiz-score{font-size:13px; margin:4px 0 10px}
 }
+/* ===== phone v2: less on screen, one control hub ===== */
+.mob-only{display:none}
+.sheet{position:fixed; inset:0; z-index:60; display:flex; align-items:flex-end; background:rgba(0,0,0,.5)}
+.sheet[hidden]{display:none}
+body.sheet-open{overflow:hidden}
+.sheet-card{width:100%; max-height:84vh; overflow-y:auto; background:var(--bg); border-top:2px solid var(--edge); border-radius:18px 18px 0 0; padding:18px max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px)); display:grid; gap:10px}
+.sheet-h{font-family:var(--font-m); font-size:12px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-3); margin-top:8px}
+.sheet-h.first{margin-top:0}
+.wkgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.wk{display:flex; align-items:center; gap:10px; text-align:left; min-height:48px; padding:6px 10px; background:var(--surface); color:var(--ink); border:1.5px solid var(--edge); border-radius:12px; font:inherit; cursor:pointer}
+.wk b{flex:none; min-width:26px; font-size:16px; font-weight:800}
+.wk span{font-size:13.5px; line-height:1.25; min-width:0}
+.wk.on{background:#FFC53D; color:#111}
+.sh-chips{display:flex; flex-wrap:wrap; gap:8px}
+.sh-chips .chip{min-height:40px}
+.sheet-done{margin-top:6px; width:100%}
+.more-i{width:100%; justify-content:center; min-height:50px; font-size:15px; text-transform:none; letter-spacing:0; box-shadow:none}
+.more-i.on{background:#FFC53D; color:#111!important}
+.sheet-close{justify-self:center; padding:8px}
+@media (max-width:700px){
+  .rail{display:none!important}
+  .hero{margin-bottom:6px}
+  .hero h1{font-size:20px}
+  .hero p,.about,.mod-head,.chips,.vchips,.q-meta,.tip-row{display:none}
+  .mob-only{display:inline-flex}
+  .pick{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; min-height:56px; margin:0 0 14px; padding:8px 14px; text-align:left; background:var(--surface); color:var(--ink); border:2px solid var(--edge); border-radius:14px; box-shadow:2px 2px 0 var(--edge); font:inherit; cursor:pointer}
+  .pk-main{display:grid; gap:2px; min-width:0}
+  .pk-main b{font-size:18px; line-height:1.2; font-weight:800}
+  .pk-main i{font-style:normal; font-size:13px; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .pk-c{font-size:18px}
+  .left > .actions{grid-template-columns:auto minmax(0,1fr) auto}
+  .left > .actions #bAll,.left > .actions #bNew{display:none}
+  .q-card{padding:18px 16px}
+  .q-text{line-height:1.5}
+  .left{gap:14px}
+  .step{padding:18px 16px}
+  .step-x p{line-height:1.65}
+  .formula{margin-top:10px}
+  .fnote > div:not(.fn-t){display:none}
+  .fnote.open > div{display:block}
+  .fnote:has(> div:nth-child(2)) .fn-t::after{content:' \25BE'; color:var(--ink-3)}
+  .fnote.open:has(> div:nth-child(2)) .fn-t::after{content:' \25B4'}
+  .fnote{cursor:pointer}
+}
+@media (min-width:701px){.sheet{display:none}}
 </style>
 
 <div class="shell">
@@ -416,6 +461,7 @@ body.rail-off .shell{padding-top:52px}
     <main id="stage"></main>
   </div>
 </div>
+<div class="sheet" id="sheet" hidden></div>
 
 <script>
 (function(){
@@ -3481,7 +3527,7 @@ function quizAnswer(i){
 function renderQuiz(){
   state.q=null;el={};
   var m=mod();
-  stage.innerHTML='<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div><div class="chips" id="qzWeeks"></div><div class="chips vchips" id="qzKinds"></div><div class="quiz-score" id="qzScore"></div><section class="card quiz-card" id="qzBody"></section>';
+  stage.innerHTML=pickHTML()+'<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div><div class="chips" id="qzWeeks"></div><div class="chips vchips" id="qzKinds"></div><div class="quiz-score" id="qzScore"></div><section class="card quiz-card" id="qzBody"></section>';
   var wk=quizWeeks(),wc=document.getElementById('qzWeeks'),kc=document.getElementById('qzKinds');
   var drawChips=function(){
     wc.innerHTML=['all'].concat(wk).map(function(w){return '<button class="chip'+(QZ.week===w?' active':'')+'" data-w="'+w+'">'+(w==='all'?'All weeks':w)+'</button>';}).join('');
@@ -3490,7 +3536,7 @@ function renderQuiz(){
   drawChips();
   wc.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;QZ.week=b.getAttribute('data-w');drawChips();quizDeck();quizNext();};
   kc.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;QZ.kind=b.getAttribute('data-k');drawChips();quizDeck();quizNext();};
-  quizDeck();quizNext();
+  quizDeck();quizNext();updatePick();
 }
 /* ================= QUIZ END ================= */
 function mod(){return MODULES.filter(function(m){return m.id===state.id;})[0];}
@@ -3503,7 +3549,7 @@ function renderRail(){
   var act=rail.querySelector('.tab.active');
   if(act&&window.innerWidth<=980&&rail.scrollWidth>rail.clientWidth)rail.scrollLeft=act.offsetLeft-(rail.clientWidth-act.offsetWidth)/2;
 }
-stage.addEventListener('click',function(e){var p=e.target.closest('.mod-head p');if(p)p.classList.toggle('open');});
+stage.addEventListener('click',function(e){var p=e.target.closest('.mod-head p');if(p)p.classList.toggle('open');var n=e.target.closest('.fnote');if(n)n.classList.toggle('open');});
 function renderStage(){
   var m=mod();
   if(m.quiz){renderQuiz();return;}
@@ -3511,12 +3557,12 @@ function renderStage(){
   if(m.quiz){renderQuiz();return;}
   if(m.quiz){renderQuiz();return;}
   if(m.quiz){renderQuiz();return;}
-  stage.innerHTML='<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div>'+
+  stage.innerHTML=pickHTML()+'<div class="mod-head"><h2>'+H(m.title||m.label)+'</h2><p>'+H(m.blurb)+'</p></div>'+
     '<div class="chips" id="chips"></div><div class="chips vchips" id="vchips" hidden></div>'+
     '<div class="workspace"><div class="left">'+
       '<section class="card q-card"><div class="q-meta" id="qMeta"></div><p class="q-text" id="qText"></p><div class="pills" id="qPills"></div><div class="tip-row"><button type="button" class="btn ghost tipbtn" id="bNums" aria-pressed="false" aria-label="Pull out the numbers"><span class="lg">Pull out the numbers</span><span class="sm">Numbers</span></button><button type="button" class="btn ghost tipbtn" id="bTip" aria-expanded="false">Tips</button><button type="button" class="btn ghost tipbtn" id="easyBtn" aria-pressed="false">Simpler words: off</button></div><div class="tip-box" id="tipBox" hidden></div></section><div class="easy-note" id="easyNote" hidden></div>'+
       '<section class="card viz"><canvas id="cv" role="img" aria-label="Diagram for the current question"></canvas></section>'+
-      '<div class="actions"><button class="btn ghost" id="bBack">Back</button><button class="btn" id="bNext">Next step</button><button class="btn ghost" id="bAll"><span class="lg">Show all</span><span class="sm">All</span></button><button class="btn ghost" id="bNew"><span class="lg">New question</span><span class="sm">New</span></button></div>'+
+      '<div class="actions"><button class="btn ghost" id="bBack">Back</button><button class="btn" id="bNext">Next step</button><button class="btn ghost" id="bAll"><span class="lg">Show all</span><span class="sm">All</span></button><button class="btn ghost" id="bNew"><span class="lg">New question</span><span class="sm">New</span></button><button type="button" class="btn ghost mob-only" id="bMore">More</button></div>'+
     '</div>'+
     '<section class="card steps-card"><div class="steps-head"><span>Worked solution</span><span id="stepCount"></span></div><div id="steps"></div></section></div>';
   el={chips:document.getElementById('chips'),vchips:document.getElementById('vchips'),meta:document.getElementById('qMeta'),text:document.getElementById('qText'),pills:document.getElementById('qPills'),cv:document.getElementById('cv'),back:document.getElementById('bBack'),next:document.getElementById('bNext'),all:document.getElementById('bAll'),nw:document.getElementById('bNew'),steps:document.getElementById('steps'),count:document.getElementById('stepCount')};
@@ -3525,7 +3571,7 @@ function renderStage(){
   el.chips.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;state.type=b.getAttribute('data-t');state.variant='any';Array.prototype.forEach.call(el.chips.children,function(c){c.classList.toggle('active',c===b);});renderVariants();newQuestion();};
   el.vchips.onclick=function(e){var b=e.target.closest('.chip');if(!b)return;state.variant=b.getAttribute('data-v');Array.prototype.forEach.call(el.vchips.children,function(c){c.classList.toggle('active',c===b);});newQuestion();};
   el.back.onclick=prevStep;el.next.onclick=nextStep;el.nw.onclick=newQuestion;el.all.onclick=function(){state.s=state.q?state.q.steps.length:0;applyStep(true);};
-  renderEasyNote();newQuestion();
+  renderEasyNote();newQuestion();updatePick();
 }
 function renderVariants(){
   var m=mod(),t=m.types.filter(function(x){return x.id===state.type;})[0];
@@ -3619,6 +3665,49 @@ function setRail(open,save){
   rail.addEventListener('click',function(e){if(e.target.closest('.tab')&&window.innerWidth<=980)setRail(false,false);});
   setRail(open,false);
 })();
+
+/* ================= phone: picker and More sheets ================= */
+var sheet=document.getElementById('sheet');
+function pickHTML(){var m=mod();return '<button type="button" class="pick mob-only" id="pickBtn"><span class="pk-main"><b>'+H(m.title||m.label)+'</b><i id="pkSub"></i></span><span class="pk-c" aria-hidden="true">&#9662;</span></button>';}
+function updatePick(){
+  var s=document.getElementById('pkSub');if(!s)return;
+  var a=function(q){var c=document.querySelector(q+' .chip.active');return c?c.textContent:'';};
+  var t=mod().quiz?[a('#qzWeeks'),a('#qzKinds')]:[a('#chips'),(el.vchips&&!el.vchips.hidden)?a('#vchips'):''];
+  s.textContent=t.filter(Boolean).join(' · ')+' · tap to change';
+}
+function closeSheet(){sheet.hidden=true;sheet.innerHTML='';document.body.classList.remove('sheet-open');updatePick();}
+function openSheet(html){sheet.innerHTML='<div class="sheet-card">'+html+'</div>';sheet.hidden=false;document.body.classList.add('sheet-open');}
+function buildPick(){
+  var tabs=[].map.call(rail.querySelectorAll('.tab'),function(t){
+    var id=t.getAttribute('data-id'),on=t.classList.contains('active');
+    var num=id==='quiz'?'Quiz':t.querySelector('.tab-wk').textContent,name=id==='quiz'?'Concept check':t.querySelector('.tab-name').textContent;
+    return '<button type="button" class="wk'+(on?' on':'')+'" data-tab="'+id+'"><b>'+num+'</b><span>'+name+'</span></button>';
+  }).join('');
+  var groups=[['Problem type','#chips'],['Variant','#vchips'],['Quiz week','#qzWeeks'],['Question type','#qzKinds']],gh='';
+  groups.forEach(function(g,gi){
+    var c=document.querySelector(g[1]);if(!c||c.hidden||!c.children.length)return;
+    gh+='<div class="sheet-h">'+g[0]+'</div><div class="sh-chips">'+[].map.call(c.children,function(ch,i){return '<button type="button" class="chip'+(ch.classList.contains('active')?' active':'')+'" data-g="'+gi+'" data-i="'+i+'">'+ch.textContent+'</button>';}).join('')+'</div>';
+  });
+  openSheet('<div class="sheet-h first">Week</div><div class="wkgrid">'+tabs+'</div>'+gh+'<button type="button" class="btn sheet-done" data-act="close">Done</button>');
+}
+function buildMore(){
+  var items=[['Show all steps','bAll',0],[state.nums?'Hide the numbers':'Pull out the numbers','bNums',state.nums],[state.tip?'Hide tips':'Tips','bTip',state.tip],['Simpler words: '+(state.easy?'on':'off'),'easyBtn',state.easy],['New question','bNew',0]];
+  openSheet(items.map(function(it){return '<button type="button" class="btn ghost more-i'+(it[2]?' on':'')+'" data-id="'+it[1]+'">'+it[0]+'</button>';}).join('')+'<button type="button" class="linkbtn sheet-close" data-act="close">Close</button>');
+}
+sheet.addEventListener('click',function(e){
+  if(e.target===sheet||e.target.closest('[data-act="close"]')){closeSheet();return;}
+  var w=e.target.closest('.wk');
+  if(w){var t=rail.querySelector('.tab[data-id="'+w.getAttribute('data-tab')+'"]');if(t)t.click();window.scrollTo(0,0);buildPick();return;}
+  var c=e.target.closest('.sh-chips .chip');
+  if(c){var g=['#chips','#vchips','#qzWeeks','#qzKinds'][+c.getAttribute('data-g')],real=document.querySelector(g);if(real&&real.children[+c.getAttribute('data-i')])real.children[+c.getAttribute('data-i')].click();closeSheet();return;}
+  var m=e.target.closest('.more-i');
+  if(m){var b=document.getElementById(m.getAttribute('data-id'));closeSheet();if(b)b.click();}
+});
+document.addEventListener('click',function(e){
+  if(e.target.closest('#pickBtn'))buildPick();
+  else if(e.target.closest('#bMore'))buildMore();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sheet.hidden)closeSheet();});
 renderRail();renderStage();initEasy();fillHeroStats();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
 })();
