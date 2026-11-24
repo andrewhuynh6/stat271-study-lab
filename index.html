@@ -19,7 +19,7 @@
   --font-m:'JetBrains Mono',ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
+  :root:not([data-theme="light"]):not([data-theme="soft"]){
     --bg:#15191C; --surface:#1E2327; --surface-2:#293035; --line:rgba(226,234,230,.22); --edge:#E2EAE6; --char:#E2EAE6;
     --ink:#E8EEEB; --ink-rgb:232,238,235; --ink-2:#BCC7C2; --ink-3:#8A9792;
     --accent:#8CC5A5; --accent-rgb:140,197,165; --hl:#8CC5A5; --hl-rgb:140,197,165;
@@ -39,6 +39,11 @@
   --bad:#FF5C57; --bad-rgb:255,92,87;
   --warn:#9ED8C6; --warn-rgb:158,216,198;
   color-scheme:dark;
+}
+:root[data-theme="soft"]{
+  --bg:#E6EBE8; --surface:#F1F4F2; --surface-2:#DAE3DE; --line:rgba(31,42,38,.24); --edge:#1F2A26; --char:#1F2A26;
+  --ink:#1F2A26; --ink-rgb:31,42,38; --ink-2:#3B4A44; --ink-3:#62716A;
+  color-scheme:light;
 }
 *,*::before,*::after{box-sizing:border-box}
 sup,sub{font-size:.72em; line-height:0; position:relative; vertical-align:baseline}
@@ -447,7 +452,16 @@ body.sheet-open{overflow:hidden}
 .easy-note > b:first-child::after{content:' \25B4'; color:var(--ink-3); font-weight:400}
 .easy-note.min{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
 .easy-note.min > b:first-child::after{content:' \25BE'}
+/* ===== theme switch: Light / Soft / Dark ===== */
+.theme-seg{display:inline-flex; margin-top:16px; border:2px solid var(--edge); border-radius:999px; overflow:hidden; background:var(--surface)}
+.theme-seg button{border:0; background:transparent; color:var(--ink); font:inherit; font-size:13px; font-weight:700; padding:7px 16px; min-height:36px; cursor:pointer}
+.theme-seg button + button{border-left:2px solid var(--edge)}
+.theme-seg button.on{background:var(--hl); color:#111}
+.sheet-card .theme-seg{display:flex; margin-top:0}
+.sheet-card .theme-seg button{flex:1; min-height:46px; font-size:15px}
+@media (max-width:700px){.hero-l > .theme-seg{display:none}}
 </style>
+<script>try{var _t=localStorage.getItem('stat271-theme');if(_t==='light'||_t==='soft'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 
 <div class="shell">
   <header class="hero">
@@ -455,6 +469,7 @@ body.sheet-open{overflow:hidden}
       <h1>STAT 271<br> Study Lab</h1>
       <p>Randomized practice with a picture for every step.</p>
       <a class="btn" href="#stage" id="heroStart">Start practicing</a> <a class="btn ghost" href="#quiz" id="heroQuiz">Quiz</a>
+      <div class="theme-seg" id="themeSeg" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="soft">Soft</button><button type="button" data-th="dark">Dark</button></div>
       <details class="about"><summary>About these answers</summary><p class="fine">Built from the Week 1 to 13 slides, problem sets, tutorials and midterms. Answers are computed in code, and exam tables round to 3 or 4 decimals, so expect small differences.</p></details>
     </div>
     <aside class="hero-r" aria-label="What is inside">
@@ -3699,7 +3714,7 @@ function buildPick(){
 }
 function buildMore(){
   var items=[['Show all steps','bAll',0],[state.nums?'Hide the numbers':'Pull out the numbers','bNums',state.nums],[state.tip?'Hide tips':'Tips','bTip',state.tip],['Simpler words: '+(state.easy?'on':'off'),'easyBtn',state.easy],['New question','bNew',0]];
-  openSheet(items.map(function(it){return '<button type="button" class="btn ghost more-i'+(it[2]?' on':'')+'" data-id="'+it[1]+'">'+it[0]+'</button>';}).join('')+'<button type="button" class="linkbtn sheet-close" data-act="close">Close</button>');
+  openSheet(items.map(function(it){return '<button type="button" class="btn ghost more-i'+(it[2]?' on':'')+'" data-id="'+it[1]+'">'+it[0]+'</button>';}).join('')+'<div class="sheet-h">Theme</div><div class="theme-seg" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="soft">Soft</button><button type="button" data-th="dark">Dark</button></div><button type="button" class="linkbtn sheet-close" data-act="close">Close</button>');markTheme();
 }
 sheet.addEventListener('click',function(e){
   if(e.target===sheet||e.target.closest('[data-act="close"]')){closeSheet();return;}
@@ -3715,6 +3730,11 @@ document.addEventListener('click',function(e){
   else if(e.target.closest('#bMore'))buildMore();
 });
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sheet.hidden)closeSheet();});
+function curTheme(){var t=document.documentElement.getAttribute('data-theme');if(t==='light'||t==='soft'||t==='dark')return t;return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+function markTheme(){var c=curTheme();[].forEach.call(document.querySelectorAll('.theme-seg button'),function(b){var on=b.getAttribute('data-th')===c;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});}
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('stat271-theme',t);}catch(e){}markTheme();}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-th]');if(b)setTheme(b.getAttribute('data-th'));});
+markTheme();
 renderRail();renderStage();initEasy();fillHeroStats();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
 })();
